@@ -1,6 +1,6 @@
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
-import HomeScreen from '../screens/HomeScreen';
+import ExerciseLibraryScreen from '../screens/ExerciseLibraryScreen';
 import LogWorkoutScreen from '../screens/LogWorkoutScreen';
 import HistoryScreen from '../screens/HistoryScreen';
 import ProgressScreen from '../screens/ProgressScreen';
@@ -15,8 +15,8 @@ export default function AppNavigator() {
           let iconName: keyof typeof Ionicons.glyphMap;
 
           switch (route.name) {
-            case 'Home':
-              iconName = focused ? 'home' : 'home-outline';
+            case 'Exercises':
+              iconName = focused ? 'barbell' : 'barbell-outline';
               break;
             case 'Log Workout':
               iconName = focused ? 'add-circle' : 'add-circle-outline';
@@ -37,7 +37,11 @@ export default function AppNavigator() {
         tabBarInactiveTintColor: 'gray',
       })}
     >
-      <Tab.Screen name="Home" component={HomeScreen} />
+      <Tab.Screen
+        name="Exercises"
+        component={ExerciseLibraryScreen}
+        options={{ title: 'Exercise Library' }}
+      />
       <Tab.Screen name="Log Workout" component={LogWorkoutScreen} />
       <Tab.Screen name="History" component={HistoryScreen} />
       <Tab.Screen name="Progress" component={ProgressScreen} />
