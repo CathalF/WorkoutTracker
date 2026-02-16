@@ -21,7 +21,7 @@ Ship a local-first mobile app that replaces the notes-app workflow with structur
 - Add custom exercise support
 - **Research needed:** No
 
-### Phase 3: Workout Logging Flow
+### Phase 3: Workout Logging Flow *(1 plan — 03-01 completed)*
 **Goal:** Users can start a workout, select muscle group, pick exercises, and log sets/reps/weight with minimal taps.
 - Muscle group selection screen (legs, chest, back, chest & biceps, shoulders & triceps, custom)
 - Exercise picker within selected muscle group
@@ -55,4 +55,4 @@ Ship a local-first mobile app that replaces the notes-app workflow with structur
 - **Research needed:** No
 
 ---
-*Last updated: 2026-02-16 — Phase 2 completed*
+*Last updated: 2026-02-16 — Phase 3 completed*
