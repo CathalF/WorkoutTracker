@@ -10,6 +10,7 @@ export type WorkoutStackParamList = {
     muscleGroupId: number;
     splitLabel: string;
     muscleGroupIds: number[];
+    selectedExercise?: { id: number; name: string };
   };
   ExercisePicker: {
     workoutId: number;
