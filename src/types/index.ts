@@ -30,3 +30,14 @@ export interface WorkoutSet {
   weight: number;
   reps: number;
 }
+
+export interface ExerciseWithSets {
+  exercise_id: number;
+  exercise_name: string;
+  sets: WorkoutSet[];
+}
+
+export interface WorkoutDetail extends Workout {
+  muscle_group_name: string;
+  exercises: ExerciseWithSets[];
+}
