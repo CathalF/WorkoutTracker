@@ -2,7 +2,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import ExerciseLibraryScreen from '../screens/ExerciseLibraryScreen';
 import WorkoutStackNavigator from './WorkoutStackNavigator';
-import HistoryScreen from '../screens/HistoryScreen';
+import HistoryStackNavigator from './HistoryStackNavigator';
 import ProgressScreen from '../screens/ProgressScreen';
 
 const Tab = createBottomTabNavigator();
@@ -47,7 +47,11 @@ export default function AppNavigator() {
         component={WorkoutStackNavigator}
         options={{ headerShown: false }}
       />
-      <Tab.Screen name="History" component={HistoryScreen} />
+      <Tab.Screen
+        name="History"
+        component={HistoryStackNavigator}
+        options={{ headerShown: false }}
+      />
       <Tab.Screen name="Progress" component={ProgressScreen} />
     </Tab.Navigator>
   );
