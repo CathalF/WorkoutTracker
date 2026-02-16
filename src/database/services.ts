@@ -5,6 +5,7 @@ import {
   ExerciseWithMuscleGroup,
   WorkoutSet,
   WorkoutDetail,
+  WorkoutSummary,
 } from '../types';
 
 export function getAllMuscleGroups(): MuscleGroup[] {
@@ -148,4 +149,46 @@ export function getWorkoutWithSets(workoutId: number): WorkoutDetail | null {
 export function deleteWorkout(workoutId: number): void {
   const db = getDatabase();
   db.runSync('DELETE FROM workouts WHERE id = ?', workoutId);
+}
+
+export function getWorkouts(muscleGroupId?: number): WorkoutSummary[] {
+  const db = getDatabase();
+  const baseQuery = `
+    SELECT
+      w.id,
+      w.date,
+      mg.name AS muscle_group_name,
+      (SELECT COUNT(DISTINCT s.exercise_id) FROM sets s WHERE s.workout_id = w.id) AS exercise_count,
+      (SELECT COUNT(*) FROM sets s WHERE s.workout_id = w.id) AS set_count,
+      (SELECT COALESCE(SUM(s.weight * s.reps), 0) FROM sets s WHERE s.workout_id = w.id) AS total_volume,
+      w.created_at
+    FROM workouts w
+    JOIN muscle_groups mg ON w.muscle_group_id = mg.id
+  `;
+
+  if (muscleGroupId !== undefined) {
+    return db.getAllSync<WorkoutSummary>(
+      baseQuery + ' WHERE w.muscle_group_id = ? ORDER BY w.date DESC, w.created_at DESC',
+      muscleGroupId
+    );
+  }
+
+  return db.getAllSync<WorkoutSummary>(
+    baseQuery + ' ORDER BY w.date DESC, w.created_at DESC'
+  );
+}
+
+export function updateSet(setId: number, weight: number, reps: number): void {
+  const db = getDatabase();
+  db.runSync(
+    'UPDATE sets SET weight = ?, reps = ? WHERE id = ?',
+    weight,
+    reps,
+    setId
+  );
+}
+
+export function deleteSet(setId: number): void {
+  const db = getDatabase();
+  db.runSync('DELETE FROM sets WHERE id = ?', setId);
 }

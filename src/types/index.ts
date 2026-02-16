@@ -41,3 +41,13 @@ export interface WorkoutDetail extends Workout {
   muscle_group_name: string;
   exercises: ExerciseWithSets[];
 }
+
+export interface WorkoutSummary {
+  id: number;
+  date: string;
+  muscle_group_name: string;
+  exercise_count: number;
+  set_count: number;
+  total_volume: number;
+  created_at: string;
+}
