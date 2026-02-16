@@ -30,7 +30,7 @@ Ship a local-first mobile app that replaces the notes-app workflow with structur
 - Save completed workout to SQLite
 - **Research needed:** No
 
-### Phase 4: Workout History
+### Phase 4: Workout History *(1 plan — 04-01 completed)*
 **Goal:** Users can browse past workouts by date and muscle group, and view session details.
 - History screen with chronological workout list
 - Filter/group by muscle group
@@ -55,4 +55,4 @@ Ship a local-first mobile app that replaces the notes-app workflow with structur
 - **Research needed:** No
 
 ---
-*Last updated: 2026-02-16 — Phase 3 completed*
+*Last updated: 2026-02-16 — Phase 4 completed*
