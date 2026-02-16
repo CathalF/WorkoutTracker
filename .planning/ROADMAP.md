@@ -13,7 +13,7 @@ Ship a local-first mobile app that replaces the notes-app workflow with structur
 - Seed exercise library with common exercises per muscle group
 - **Research needed:** No
 
-### Phase 2: Exercise Library & Data Layer
+### Phase 2: Exercise Library & Data Layer *(1 plan — 02-01 completed)*
 **Goal:** Working data layer with exercise CRUD and a browsable exercise library screen.
 - Build database service layer (queries for exercises, workouts, sets)
 - Create Exercise Library screen — browse exercises grouped by muscle group
@@ -55,4 +55,4 @@ Ship a local-first mobile app that replaces the notes-app workflow with structur
 - **Research needed:** No
 
 ---
-*Last updated: 2026-02-16*
+*Last updated: 2026-02-16 — Phase 2 completed*
