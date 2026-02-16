@@ -1,7 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
+  Alert,
   FlatList,
+  Modal,
   Pressable,
+  ScrollView,
   SectionList,
   StyleSheet,
   Text,
@@ -11,6 +14,8 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { Exercise, ExerciseWithMuscleGroup, MuscleGroup } from '../types';
 import {
+  addCustomExercise,
+  deleteCustomExercise,
   getAllMuscleGroups,
   getExercisesByMuscleGroup,
   searchExercises,
@@ -31,9 +36,16 @@ export default function ExerciseLibraryScreen({ navigation }: { navigation: any 
   const [isSearching, setIsSearching] = useState(false);
   const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Modal state
+  const [modalVisible, setModalVisible] = useState(false);
+  const [newExerciseName, setNewExerciseName] = useState('');
+  const [selectedMuscleGroupId, setSelectedMuscleGroupId] = useState<number | null>(null);
+  const [muscleGroups, setMuscleGroups] = useState<MuscleGroup[]>([]);
+
   const loadData = useCallback(() => {
-    const muscleGroups: MuscleGroup[] = getAllMuscleGroups();
-    const newSections: Section[] = muscleGroups.map((mg) => {
+    const groups: MuscleGroup[] = getAllMuscleGroups();
+    setMuscleGroups(groups);
+    const newSections: Section[] = groups.map((mg) => {
       const exercises = getExercisesByMuscleGroup(mg.id);
       return {
         title: mg.name,
@@ -49,20 +61,76 @@ export default function ExerciseLibraryScreen({ navigation }: { navigation: any 
     loadData();
   }, [loadData]);
 
+  const openAddModal = useCallback(() => {
+    setNewExerciseName('');
+    setSelectedMuscleGroupId(null);
+    setModalVisible(true);
+  }, []);
+
   useEffect(() => {
     navigation.setOptions({
       headerRight: () => (
         <Pressable
-          onPress={() => {
-            // Will be wired in Task 6
-          }}
+          onPress={openAddModal}
           style={styles.headerButton}
         >
           <Ionicons name="add" size={28} color="#007AFF" />
         </Pressable>
       ),
     });
-  }, [navigation]);
+  }, [navigation, openAddModal]);
+
+  const handleAddExercise = () => {
+    const trimmedName = newExerciseName.trim();
+    if (trimmedName === '') {
+      Alert.alert('Validation Error', 'Please enter an exercise name.');
+      return;
+    }
+    if (selectedMuscleGroupId === null) {
+      Alert.alert('Validation Error', 'Please select a muscle group.');
+      return;
+    }
+
+    addCustomExercise(trimmedName, selectedMuscleGroupId);
+    setModalVisible(false);
+    setNewExerciseName('');
+    setSelectedMuscleGroupId(null);
+    loadData();
+
+    // Refresh search results if currently searching
+    if (isSearching && searchQuery.trim() !== '') {
+      const results = searchExercises(searchQuery.trim());
+      setSearchResults(results);
+    }
+  };
+
+  const handleDeleteExercise = (exercise: Exercise) => {
+    if (exercise.is_custom !== 1) {
+      return;
+    }
+
+    Alert.alert(
+      'Delete Exercise',
+      `Are you sure you want to delete "${exercise.name}"?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: () => {
+            deleteCustomExercise(exercise.id);
+            loadData();
+
+            // Refresh search results if currently searching
+            if (isSearching && searchQuery.trim() !== '') {
+              const results = searchExercises(searchQuery.trim());
+              setSearchResults(results);
+            }
+          },
+        },
+      ]
+    );
+  };
 
   const handleSearchChange = (text: string) => {
     setSearchQuery(text);
@@ -122,20 +190,26 @@ export default function ExerciseLibraryScreen({ navigation }: { navigation: any 
     }
 
     return (
-      <View style={styles.exerciseRow}>
+      <Pressable
+        style={styles.exerciseRow}
+        onLongPress={() => handleDeleteExercise(item)}
+      >
         <Text style={styles.exerciseName}>{item.name}</Text>
         {item.is_custom === 1 && (
           <View style={styles.customBadge}>
             <Text style={styles.customBadgeText}>Custom</Text>
           </View>
         )}
-      </View>
+      </Pressable>
     );
   };
 
   const renderSearchItem = ({ item }: { item: ExerciseWithMuscleGroup }) => {
     return (
-      <View style={styles.exerciseRow}>
+      <Pressable
+        style={styles.exerciseRow}
+        onLongPress={() => handleDeleteExercise(item)}
+      >
         <View>
           <Text style={styles.exerciseName}>{item.name}</Text>
           <Text style={styles.muscleGroupLabel}>{item.muscle_group_name}</Text>
@@ -145,7 +219,7 @@ export default function ExerciseLibraryScreen({ navigation }: { navigation: any 
             <Text style={styles.customBadgeText}>Custom</Text>
           </View>
         )}
-      </View>
+      </Pressable>
     );
   };
 
@@ -190,6 +264,70 @@ export default function ExerciseLibraryScreen({ navigation }: { navigation: any 
           contentContainerStyle={styles.listContent}
         />
       )}
+
+      <Modal
+        visible={modalVisible}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Add Custom Exercise</Text>
+
+            <TextInput
+              style={styles.modalInput}
+              placeholder="Exercise name"
+              placeholderTextColor="#8E8E93"
+              value={newExerciseName}
+              onChangeText={setNewExerciseName}
+              autoCapitalize="words"
+              autoFocus={true}
+            />
+
+            <Text style={styles.modalLabel}>Select Muscle Group</Text>
+            <ScrollView style={styles.muscleGroupList}>
+              {muscleGroups.map((mg) => (
+                <Pressable
+                  key={mg.id}
+                  style={[
+                    styles.muscleGroupOption,
+                    selectedMuscleGroupId === mg.id && styles.muscleGroupOptionSelected,
+                  ]}
+                  onPress={() => setSelectedMuscleGroupId(mg.id)}
+                >
+                  <Text
+                    style={[
+                      styles.muscleGroupOptionText,
+                      selectedMuscleGroupId === mg.id && styles.muscleGroupOptionTextSelected,
+                    ]}
+                  >
+                    {mg.name}
+                  </Text>
+                  {selectedMuscleGroupId === mg.id && (
+                    <Ionicons name="checkmark" size={20} color="#007AFF" />
+                  )}
+                </Pressable>
+              ))}
+            </ScrollView>
+
+            <View style={styles.modalButtons}>
+              <Pressable
+                style={styles.modalCancelButton}
+                onPress={() => setModalVisible(false)}
+              >
+                <Text style={styles.modalCancelButtonText}>Cancel</Text>
+              </Pressable>
+              <Pressable
+                style={styles.modalAddButton}
+                onPress={handleAddExercise}
+              >
+                <Text style={styles.modalAddButtonText}>Add</Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -290,5 +428,98 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#8E8E93',
     marginTop: 12,
+  },
+  // Modal styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 24,
+    width: '85%',
+    maxHeight: '70%',
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#000',
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  modalInput: {
+    height: 44,
+    borderWidth: 1,
+    borderColor: '#C6C6C8',
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    fontSize: 16,
+    color: '#000',
+    marginBottom: 16,
+  },
+  modalLabel: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#000',
+    marginBottom: 8,
+  },
+  muscleGroupList: {
+    maxHeight: 200,
+    marginBottom: 16,
+  },
+  muscleGroupOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    marginBottom: 4,
+  },
+  muscleGroupOptionSelected: {
+    backgroundColor: '#E8F0FE',
+  },
+  muscleGroupOptionText: {
+    fontSize: 16,
+    color: '#000',
+  },
+  muscleGroupOptionTextSelected: {
+    color: '#007AFF',
+    fontWeight: '600',
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  modalCancelButton: {
+    flex: 1,
+    height: 44,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#C6C6C8',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalCancelButtonText: {
+    fontSize: 16,
+    color: '#8E8E93',
+    fontWeight: '600',
+  },
+  modalAddButton: {
+    flex: 1,
+    height: 44,
+    borderRadius: 10,
+    backgroundColor: '#007AFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalAddButtonText: {
+    fontSize: 16,
+    color: '#fff',
+    fontWeight: '600',
   },
 });
