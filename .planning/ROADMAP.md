@@ -4,7 +4,7 @@
 
 Ship a local-first mobile app that replaces the notes-app workflow with structured workout logging and progress visibility.
 
-### Phase 1: Project Setup & Navigation Shell
+### Phase 1: Project Setup & Navigation Shell *(1 plan — 01-01 completed)*
 **Goal:** Bootstrapped Expo project with TypeScript, navigation skeleton, and SQLite database schema in place.
 - Initialize Expo project with TypeScript template
 - Install and configure dependencies (React Navigation, expo-sqlite)
