@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   FlatList,
   Pressable,
@@ -17,6 +17,7 @@ import {
   getExercisesByMuscleGroup,
   searchExercises,
 } from '../database/services';
+import { useTheme, ThemeColors } from '../theme';
 
 type Props = NativeStackScreenProps<WorkoutStackParamList, 'ExercisePicker'>;
 
@@ -26,6 +27,8 @@ interface Section {
 }
 
 export default function ExercisePickerScreen({ navigation, route }: Props) {
+  const colors = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const { muscleGroupIds, alreadyAddedIds } = route.params;
   const alreadyAddedSet = new Set(alreadyAddedIds);
 
@@ -87,14 +90,14 @@ export default function ExercisePickerScreen({ navigation, route }: Props) {
   const renderExerciseItem = (exercise: Exercise, isAdded: boolean) => (
     <Pressable
       key={exercise.id}
-      style={[styles.exerciseRow, isAdded && styles.exerciseRowDisabled]}
+      style={[styles.exerciseRow, isAdded && staticStyles.exerciseRowDisabled]}
       onPress={() => selectExercise(exercise.id, exercise.name)}
       disabled={isAdded}
     >
       <Text style={[styles.exerciseName, isAdded && styles.exerciseNameDisabled]}>
         {exercise.name}
       </Text>
-      {isAdded && <Ionicons name="checkmark-circle" size={20} color="#8E8E93" />}
+      {isAdded && <Ionicons name="checkmark-circle" size={20} color={colors.textSecondary} />}
     </Pressable>
   );
 
@@ -102,7 +105,7 @@ export default function ExercisePickerScreen({ navigation, route }: Props) {
     const isAdded = alreadyAddedSet.has(item.id);
     return (
       <Pressable
-        style={[styles.exerciseRow, isAdded && styles.exerciseRowDisabled]}
+        style={[styles.exerciseRow, isAdded && staticStyles.exerciseRowDisabled]}
         onPress={() => selectExercise(item.id, item.name)}
         disabled={isAdded}
       >
@@ -112,7 +115,7 @@ export default function ExercisePickerScreen({ navigation, route }: Props) {
           </Text>
           <Text style={styles.muscleGroupLabel}>{item.muscle_group_name}</Text>
         </View>
-        {isAdded && <Ionicons name="checkmark-circle" size={20} color="#8E8E93" />}
+        {isAdded && <Ionicons name="checkmark-circle" size={20} color={colors.textSecondary} />}
       </Pressable>
     );
   };
@@ -120,19 +123,19 @@ export default function ExercisePickerScreen({ navigation, route }: Props) {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Pressable onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Ionicons name="close" size={28} color="#007AFF" />
+        <Pressable onPress={() => navigation.goBack()} style={staticStyles.backButton}>
+          <Ionicons name="close" size={28} color={colors.primary} />
         </Pressable>
         <Text style={styles.headerTitle}>Select Exercise</Text>
-        <View style={styles.backButton} />
+        <View style={staticStyles.backButton} />
       </View>
 
       <View style={styles.searchContainer}>
-        <Ionicons name="search" size={18} color="#8E8E93" style={styles.searchIcon} />
+        <Ionicons name="search" size={18} color={colors.textSecondary} style={staticStyles.searchIcon} />
         <TextInput
           style={styles.searchInput}
           placeholder="Search exercises..."
-          placeholderTextColor="#8E8E93"
+          placeholderTextColor={colors.textSecondary}
           value={searchQuery}
           onChangeText={handleSearchChange}
           autoCapitalize="none"
@@ -149,7 +152,7 @@ export default function ExercisePickerScreen({ navigation, route }: Props) {
           <Ionicons
             name={showAll ? 'contract-outline' : 'expand-outline'}
             size={18}
-            color="#007AFF"
+            color={colors.primary}
           />
         </Pressable>
       )}
@@ -161,11 +164,11 @@ export default function ExercisePickerScreen({ navigation, route }: Props) {
           renderItem={renderSearchItem}
           ListEmptyComponent={
             <View style={styles.emptyState}>
-              <Ionicons name="search-outline" size={48} color="#C7C7CC" />
+              <Ionicons name="search-outline" size={48} color={colors.textTertiary} />
               <Text style={styles.emptyStateText}>No exercises found</Text>
             </View>
           }
-          contentContainerStyle={searchResults.length === 0 ? styles.emptyListContent : styles.listContent}
+          contentContainerStyle={searchResults.length === 0 ? staticStyles.emptyListContent : staticStyles.listContent}
           keyboardShouldPersistTaps="handled"
         />
       ) : (
@@ -179,7 +182,7 @@ export default function ExercisePickerScreen({ navigation, route }: Props) {
           )}
           renderItem={({ item }) => renderExerciseItem(item, alreadyAddedSet.has(item.id))}
           stickySectionHeadersEnabled={false}
-          contentContainerStyle={styles.listContent}
+          contentContainerStyle={staticStyles.listContent}
           keyboardShouldPersistTaps="handled"
         />
       )}
@@ -187,10 +190,29 @@ export default function ExercisePickerScreen({ navigation, route }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const staticStyles = StyleSheet.create({
+  backButton: {
+    width: 40,
+    alignItems: 'center',
+  },
+  searchIcon: {
+    marginRight: 8,
+  },
+  listContent: {
+    paddingBottom: 20,
+  },
+  emptyListContent: {
+    flex: 1,
+  },
+  exerciseRowDisabled: {
+    opacity: 0.5,
+  },
+});
+
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: colors.surface,
   },
   header: {
     flexDirection: 'row',
@@ -199,18 +221,14 @@ const styles = StyleSheet.create({
     paddingTop: 56,
     paddingHorizontal: 16,
     paddingBottom: 12,
-    backgroundColor: '#fff',
+    backgroundColor: colors.surface,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#C6C6C8',
-  },
-  backButton: {
-    width: 40,
-    alignItems: 'center',
+    borderBottomColor: colors.border,
   },
   headerTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#000',
+    color: colors.text,
   },
   searchContainer: {
     flexDirection: 'row',
@@ -218,17 +236,14 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
     marginVertical: 8,
     paddingHorizontal: 12,
-    backgroundColor: '#F2F2F7',
+    backgroundColor: colors.searchBackground,
     borderRadius: 10,
-  },
-  searchIcon: {
-    marginRight: 8,
   },
   searchInput: {
     flex: 1,
     height: 40,
     fontSize: 16,
-    color: '#000',
+    color: colors.text,
   },
   browseAllToggle: {
     flexDirection: 'row',
@@ -237,24 +252,24 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     gap: 6,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#E5E5EA',
+    borderBottomColor: colors.separator,
   },
   browseAllText: {
     fontSize: 15,
-    color: '#007AFF',
+    color: colors.primary,
     fontWeight: '500',
   },
   sectionHeader: {
     paddingVertical: 10,
     paddingHorizontal: 16,
-    backgroundColor: '#F2F2F7',
+    backgroundColor: colors.background,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#C6C6C8',
+    borderBottomColor: colors.border,
   },
   sectionHeaderText: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#000',
+    color: colors.text,
   },
   exerciseRow: {
     flexDirection: 'row',
@@ -263,28 +278,19 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 16,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#E5E5EA',
-  },
-  exerciseRowDisabled: {
-    opacity: 0.5,
+    borderBottomColor: colors.separator,
   },
   exerciseName: {
     fontSize: 16,
-    color: '#000',
+    color: colors.text,
   },
   exerciseNameDisabled: {
-    color: '#8E8E93',
+    color: colors.textSecondary,
   },
   muscleGroupLabel: {
     fontSize: 13,
-    color: '#8E8E93',
+    color: colors.textSecondary,
     marginTop: 2,
-  },
-  listContent: {
-    paddingBottom: 20,
-  },
-  emptyListContent: {
-    flex: 1,
   },
   emptyState: {
     flex: 1,
@@ -294,7 +300,7 @@ const styles = StyleSheet.create({
   },
   emptyStateText: {
     fontSize: 16,
-    color: '#8E8E93',
+    color: colors.textSecondary,
     marginTop: 12,
   },
 });

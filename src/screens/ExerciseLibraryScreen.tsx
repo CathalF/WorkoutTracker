@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Alert,
   FlatList,
@@ -20,6 +20,7 @@ import {
   getExercisesByMuscleGroup,
   searchExercises,
 } from '../database/services';
+import { useTheme, ThemeColors } from '../theme';
 
 interface Section {
   title: string;
@@ -29,6 +30,8 @@ interface Section {
 }
 
 export default function ExerciseLibraryScreen({ navigation }: { navigation: any }) {
+  const colors = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [sections, setSections] = useState<Section[]>([]);
   const [collapsedIds, setCollapsedIds] = useState<Set<number>>(new Set());
   const [searchQuery, setSearchQuery] = useState('');
@@ -72,13 +75,13 @@ export default function ExerciseLibraryScreen({ navigation }: { navigation: any 
       headerRight: () => (
         <Pressable
           onPress={openAddModal}
-          style={styles.headerButton}
+          style={staticStyles.headerButton}
         >
-          <Ionicons name="add" size={28} color="#007AFF" />
+          <Ionicons name="add" size={28} color={colors.primary} />
         </Pressable>
       ),
     });
-  }, [navigation, openAddModal]);
+  }, [navigation, openAddModal, colors.primary]);
 
   const handleAddExercise = () => {
     const trimmedName = newExerciseName.trim();
@@ -97,7 +100,6 @@ export default function ExerciseLibraryScreen({ navigation }: { navigation: any 
     setSelectedMuscleGroupId(null);
     loadData();
 
-    // Refresh search results if currently searching
     if (isSearching && searchQuery.trim() !== '') {
       const results = searchExercises(searchQuery.trim());
       setSearchResults(results);
@@ -121,7 +123,6 @@ export default function ExerciseLibraryScreen({ navigation }: { navigation: any 
             deleteCustomExercise(exercise.id);
             loadData();
 
-            // Refresh search results if currently searching
             if (isSearching && searchQuery.trim() !== '') {
               const results = searchExercises(searchQuery.trim());
               setSearchResults(results);
@@ -171,11 +172,11 @@ export default function ExerciseLibraryScreen({ navigation }: { navigation: any 
         style={styles.sectionHeader}
         onPress={() => toggleSection(section.muscleGroupId)}
       >
-        <View style={styles.sectionHeaderLeft}>
+        <View style={staticStyles.sectionHeaderLeft}>
           <Ionicons
             name={isCollapsed ? 'chevron-forward' : 'chevron-down'}
             size={18}
-            color="#007AFF"
+            color={colors.primary}
           />
           <Text style={styles.sectionHeaderText}>{section.title}</Text>
         </View>
@@ -225,7 +226,7 @@ export default function ExerciseLibraryScreen({ navigation }: { navigation: any 
 
   const renderEmptySearch = () => (
     <View style={styles.emptyState}>
-      <Ionicons name="search-outline" size={48} color="#C7C7CC" />
+      <Ionicons name="search-outline" size={48} color={colors.textTertiary} />
       <Text style={styles.emptyStateText}>No exercises found</Text>
     </View>
   );
@@ -233,11 +234,11 @@ export default function ExerciseLibraryScreen({ navigation }: { navigation: any 
   return (
     <View style={styles.container}>
       <View style={styles.searchContainer}>
-        <Ionicons name="search" size={18} color="#8E8E93" style={styles.searchIcon} />
+        <Ionicons name="search" size={18} color={colors.textSecondary} style={staticStyles.searchIcon} />
         <TextInput
           style={styles.searchInput}
           placeholder="Search exercises..."
-          placeholderTextColor="#8E8E93"
+          placeholderTextColor={colors.textSecondary}
           value={searchQuery}
           onChangeText={handleSearchChange}
           autoCapitalize="none"
@@ -252,7 +253,7 @@ export default function ExerciseLibraryScreen({ navigation }: { navigation: any 
           keyExtractor={(item) => item.id.toString()}
           renderItem={renderSearchItem}
           ListEmptyComponent={renderEmptySearch}
-          contentContainerStyle={searchResults.length === 0 ? styles.emptyListContent : styles.listContent}
+          contentContainerStyle={searchResults.length === 0 ? staticStyles.emptyListContent : staticStyles.listContent}
         />
       ) : (
         <SectionList
@@ -261,7 +262,7 @@ export default function ExerciseLibraryScreen({ navigation }: { navigation: any 
           renderSectionHeader={renderSectionHeader}
           renderItem={renderSectionItem}
           stickySectionHeadersEnabled={false}
-          contentContainerStyle={styles.listContent}
+          contentContainerStyle={staticStyles.listContent}
         />
       )}
 
@@ -278,7 +279,7 @@ export default function ExerciseLibraryScreen({ navigation }: { navigation: any 
             <TextInput
               style={styles.modalInput}
               placeholder="Exercise name"
-              placeholderTextColor="#8E8E93"
+              placeholderTextColor={colors.textSecondary}
               value={newExerciseName}
               onChangeText={setNewExerciseName}
               autoCapitalize="words"
@@ -286,12 +287,12 @@ export default function ExerciseLibraryScreen({ navigation }: { navigation: any 
             />
 
             <Text style={styles.modalLabel}>Select Muscle Group</Text>
-            <ScrollView style={styles.muscleGroupList}>
+            <ScrollView style={staticStyles.muscleGroupList}>
               {muscleGroups.map((mg) => (
                 <Pressable
                   key={mg.id}
                   style={[
-                    styles.muscleGroupOption,
+                    staticStyles.muscleGroupOption,
                     selectedMuscleGroupId === mg.id && styles.muscleGroupOptionSelected,
                   ]}
                   onPress={() => setSelectedMuscleGroupId(mg.id)}
@@ -305,13 +306,13 @@ export default function ExerciseLibraryScreen({ navigation }: { navigation: any 
                     {mg.name}
                   </Text>
                   {selectedMuscleGroupId === mg.id && (
-                    <Ionicons name="checkmark" size={20} color="#007AFF" />
+                    <Ionicons name="checkmark" size={20} color={colors.primary} />
                   )}
                 </Pressable>
               ))}
             </ScrollView>
 
-            <View style={styles.modalButtons}>
+            <View style={staticStyles.modalButtons}>
               <Pressable
                 style={styles.modalCancelButton}
                 onPress={() => setModalVisible(false)}
@@ -322,7 +323,7 @@ export default function ExerciseLibraryScreen({ navigation }: { navigation: any 
                 style={styles.modalAddButton}
                 onPress={handleAddExercise}
               >
-                <Text style={styles.modalAddButtonText}>Add</Text>
+                <Text style={staticStyles.modalAddButtonText}>Add</Text>
               </Pressable>
             </View>
           </View>
@@ -332,10 +333,19 @@ export default function ExerciseLibraryScreen({ navigation }: { navigation: any 
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
+// Static styles that don't depend on theme
+const staticStyles = StyleSheet.create({
+  headerButton: {
+    marginRight: 8,
+    padding: 4,
+  },
+  searchIcon: {
+    marginRight: 8,
+  },
+  sectionHeaderLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   listContent: {
     paddingBottom: 20,
@@ -343,9 +353,35 @@ const styles = StyleSheet.create({
   emptyListContent: {
     flex: 1,
   },
-  headerButton: {
-    marginRight: 8,
-    padding: 4,
+  muscleGroupList: {
+    maxHeight: 200,
+    marginBottom: 16,
+  },
+  muscleGroupOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    marginBottom: 4,
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  modalAddButtonText: {
+    fontSize: 16,
+    color: '#fff',
+    fontWeight: '600',
+  },
+});
+
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: colors.surface,
   },
   searchContainer: {
     flexDirection: 'row',
@@ -353,17 +389,14 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
     marginVertical: 8,
     paddingHorizontal: 12,
-    backgroundColor: '#F2F2F7',
+    backgroundColor: colors.searchBackground,
     borderRadius: 10,
-  },
-  searchIcon: {
-    marginRight: 8,
   },
   searchInput: {
     flex: 1,
     height: 40,
     fontSize: 16,
-    color: '#000',
+    color: colors.text,
   },
   sectionHeader: {
     flexDirection: 'row',
@@ -371,23 +404,18 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingVertical: 12,
     paddingHorizontal: 16,
-    backgroundColor: '#F2F2F7',
+    backgroundColor: colors.background,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#C6C6C8',
-  },
-  sectionHeaderLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+    borderBottomColor: colors.border,
   },
   sectionHeaderText: {
     fontSize: 17,
     fontWeight: '600',
-    color: '#000',
+    color: colors.text,
   },
   sectionHeaderCount: {
     fontSize: 15,
-    color: '#8E8E93',
+    color: colors.textSecondary,
   },
   exerciseRow: {
     flexDirection: 'row',
@@ -396,19 +424,19 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 16,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#E5E5EA',
+    borderBottomColor: colors.separator,
   },
   exerciseName: {
     fontSize: 16,
-    color: '#000',
+    color: colors.text,
   },
   muscleGroupLabel: {
     fontSize: 13,
-    color: '#8E8E93',
+    color: colors.textSecondary,
     marginTop: 2,
   },
   customBadge: {
-    backgroundColor: '#007AFF',
+    backgroundColor: colors.primary,
     borderRadius: 10,
     paddingHorizontal: 8,
     paddingVertical: 2,
@@ -426,18 +454,18 @@ const styles = StyleSheet.create({
   },
   emptyStateText: {
     fontSize: 16,
-    color: '#8E8E93',
+    color: colors.textSecondary,
     marginTop: 12,
   },
   // Modal styles
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: colors.modalOverlay,
     justifyContent: 'center',
     alignItems: 'center',
   },
   modalContent: {
-    backgroundColor: '#fff',
+    backgroundColor: colors.surface,
     borderRadius: 16,
     padding: 24,
     width: '85%',
@@ -446,80 +474,57 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontSize: 20,
     fontWeight: '700',
-    color: '#000',
+    color: colors.text,
     marginBottom: 16,
     textAlign: 'center',
   },
   modalInput: {
     height: 44,
     borderWidth: 1,
-    borderColor: '#C6C6C8',
+    borderColor: colors.border,
     borderRadius: 10,
     paddingHorizontal: 12,
     fontSize: 16,
-    color: '#000',
+    color: colors.text,
     marginBottom: 16,
   },
   modalLabel: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#000',
+    color: colors.text,
     marginBottom: 8,
   },
-  muscleGroupList: {
-    maxHeight: 200,
-    marginBottom: 16,
-  },
-  muscleGroupOption: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    borderRadius: 8,
-    marginBottom: 4,
-  },
   muscleGroupOptionSelected: {
-    backgroundColor: '#E8F0FE',
+    backgroundColor: colors.pressed,
   },
   muscleGroupOptionText: {
     fontSize: 16,
-    color: '#000',
+    color: colors.text,
   },
   muscleGroupOptionTextSelected: {
-    color: '#007AFF',
+    color: colors.primary,
     fontWeight: '600',
-  },
-  modalButtons: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: 12,
   },
   modalCancelButton: {
     flex: 1,
     height: 44,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: '#C6C6C8',
+    borderColor: colors.border,
     alignItems: 'center',
     justifyContent: 'center',
   },
   modalCancelButtonText: {
     fontSize: 16,
-    color: '#8E8E93',
+    color: colors.textSecondary,
     fontWeight: '600',
   },
   modalAddButton: {
     flex: 1,
     height: 44,
     borderRadius: 10,
-    backgroundColor: '#007AFF',
+    backgroundColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  modalAddButtonText: {
-    fontSize: 16,
-    color: '#fff',
-    fontWeight: '600',
   },
 });

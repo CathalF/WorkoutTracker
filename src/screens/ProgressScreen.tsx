@@ -24,6 +24,7 @@ import {
   getExerciseVolume,
   getPersonalRecords,
 } from '../database/services';
+import { useTheme, ThemeColors } from '../theme';
 
 type TimeRange = '1M' | '3M' | '6M' | 'ALL';
 type ChartType = 'weight' | 'volume';
@@ -56,6 +57,8 @@ function getDateFrom(range: TimeRange): string | undefined {
 }
 
 export default function ProgressScreen() {
+  const colors = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [exercises, setExercises] = useState<LoggedExercise[]>([]);
   const [selectedExerciseId, setSelectedExerciseId] = useState<number | null>(null);
   const [timeRange, setTimeRange] = useState<TimeRange>('ALL');
@@ -74,7 +77,6 @@ export default function ProgressScreen() {
     [exercises, selectedExerciseId]
   );
 
-  // Load logged exercises on focus
   useFocusEffect(
     useCallback(() => {
       const logged = getLoggedExercises();
@@ -85,7 +87,6 @@ export default function ProgressScreen() {
     }, [selectedExerciseId])
   );
 
-  // Load chart data when exercise, time range, or chart type changes
   useEffect(() => {
     if (!selectedExerciseId) return;
     const dateFrom = getDateFrom(timeRange);
@@ -96,7 +97,6 @@ export default function ProgressScreen() {
     }
   }, [selectedExerciseId, timeRange, chartType]);
 
-  // Load personal records when exercise changes
   useEffect(() => {
     if (!selectedExerciseId) return;
     setPersonalRecords(getPersonalRecords(selectedExerciseId));
@@ -107,7 +107,6 @@ export default function ProgressScreen() {
     setSelectorOpen(false);
   };
 
-  // Chart data transformations
   const weightChartData = useMemo(() => {
     if (progressData.length < 2) return [];
     const step = progressData.length > 20 ? 5 : progressData.length > 10 ? 3 : 1;
@@ -139,15 +138,14 @@ export default function ProgressScreen() {
     return 28;
   }, [chartType, weightChartData.length, volumeChartData.length]);
 
-  // Empty state: no logged exercises
   if (exercises.length === 0) {
     return (
       <View style={styles.container}>
         <View style={styles.header}>
           <Text style={styles.title}>Progress</Text>
         </View>
-        <View style={styles.emptyState}>
-          <Ionicons name="analytics-outline" size={64} color="#C7C7CC" />
+        <View style={staticStyles.emptyState}>
+          <Ionicons name="analytics-outline" size={64} color={colors.textTertiary} />
           <Text style={styles.emptyStateTitle}>No data yet</Text>
           <Text style={styles.emptyStateSubtitle}>
             Log some workouts to see your progress
@@ -165,7 +163,7 @@ export default function ProgressScreen() {
         <Text style={styles.title}>Progress</Text>
       </View>
 
-      <ScrollView style={styles.scrollContent} contentContainerStyle={styles.scrollContentContainer}>
+      <ScrollView style={staticStyles.scrollContent} contentContainerStyle={staticStyles.scrollContentContainer}>
         {/* Exercise Selector */}
         <Pressable
           style={({ pressed }) => [styles.exerciseSelector, pressed && styles.exerciseSelectorPressed]}
@@ -179,15 +177,15 @@ export default function ProgressScreen() {
               {selectedExercise?.muscle_group_name ?? ''}
             </Text>
           </View>
-          <Ionicons name="chevron-down" size={20} color="#8E8E93" />
+          <Ionicons name="chevron-down" size={20} color={colors.textSecondary} />
         </Pressable>
 
         {/* Time Range Chips */}
-        <View style={styles.controlsRow}>
+        <View style={staticStyles.controlsRow}>
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.chipRow}
+            contentContainerStyle={staticStyles.chipRow}
           >
             {TIME_RANGES.map((tr) => (
               <Pressable
@@ -237,12 +235,12 @@ export default function ProgressScreen() {
             {chartType === 'weight' ? 'Max Weight (lbs)' : 'Total Volume (lbs)'}
           </Text>
           {currentData.length === 0 ? (
-            <View style={styles.noDataContainer}>
-              <Ionicons name="bar-chart-outline" size={48} color="#C7C7CC" />
+            <View style={staticStyles.noDataContainer}>
+              <Ionicons name="bar-chart-outline" size={48} color={colors.textTertiary} />
               <Text style={styles.noDataText}>No data for this time range</Text>
             </View>
           ) : currentData.length === 1 ? (
-            <View style={styles.noDataContainer}>
+            <View style={staticStyles.noDataContainer}>
               <Text style={styles.singlePointValue}>
                 {chartType === 'weight'
                   ? `${(currentData[0] as ExerciseProgressPoint).max_weight} lbs`
@@ -253,25 +251,25 @@ export default function ProgressScreen() {
           ) : chartType === 'weight' ? (
             <LineChart
               data={weightChartData}
-              color="#007AFF"
-              dataPointsColor="#007AFF"
+              color={colors.primary}
+              dataPointsColor={colors.primary}
               thickness={2}
               dataPointsRadius={4}
               spacing={chartSpacing}
               adjustToWidth={weightChartData.length <= 10}
               yAxisLabelWidth={50}
-              yAxisTextStyle={{ fontSize: 11, color: '#8E8E93' }}
-              xAxisLabelTextStyle={{ fontSize: 11, color: '#8E8E93' }}
+              yAxisTextStyle={{ fontSize: 11, color: colors.textSecondary }}
+              xAxisLabelTextStyle={{ fontSize: 11, color: colors.textSecondary }}
               areaChart
-              startFillColor="rgba(0,122,255,0.15)"
-              endFillColor="rgba(0,122,255,0.01)"
+              startFillColor={colors.chartAreaFillStart}
+              endFillColor={colors.chartAreaFillEnd}
               startOpacity={0.3}
               endOpacity={0}
               overflowTop={30}
               pointerConfig={{
-                pointerStripColor: '#007AFF',
+                pointerStripColor: colors.primary,
                 pointerStripWidth: 1,
-                pointerColor: '#007AFF',
+                pointerColor: colors.primary,
                 radius: 5,
                 pointerLabelWidth: 80,
                 pointerLabelHeight: 30,
@@ -287,14 +285,14 @@ export default function ProgressScreen() {
           ) : (
             <BarChart
               data={volumeChartData}
-              frontColor="#34C759"
+              frontColor={colors.success}
               barWidth={20}
               barBorderRadius={4}
               spacing={chartSpacing}
               adjustToWidth={volumeChartData.length <= 10}
               yAxisLabelWidth={60}
-              yAxisTextStyle={{ fontSize: 11, color: '#8E8E93' }}
-              xAxisLabelTextStyle={{ fontSize: 11, color: '#8E8E93' }}
+              yAxisTextStyle={{ fontSize: 11, color: colors.textSecondary }}
+              xAxisLabelTextStyle={{ fontSize: 11, color: colors.textSecondary }}
               renderTooltip={(item: { value: number }) => (
                 <View style={styles.tooltipContainer}>
                   <Text style={styles.tooltipText}>{Math.round(item.value)} lbs</Text>
@@ -308,13 +306,13 @@ export default function ProgressScreen() {
 
         {/* Personal Records */}
         {(personalRecords.maxWeight || personalRecords.maxVolume) && (
-          <View style={styles.prSection}>
+          <View style={staticStyles.prSection}>
             <Text style={styles.prSectionTitle}>Personal Records</Text>
             <View style={styles.prCard}>
               {personalRecords.maxWeight && (
-                <View style={styles.prRow}>
-                  <Ionicons name="trophy" size={24} color="#FF9500" />
-                  <View style={styles.prInfo}>
+                <View style={staticStyles.prRow}>
+                  <Ionicons name="trophy" size={24} color={colors.warning} />
+                  <View style={staticStyles.prInfo}>
                     <Text style={styles.prLabel}>Max Weight</Text>
                     <Text style={styles.prValue}>
                       {personalRecords.maxWeight.weight} lbs
@@ -328,9 +326,9 @@ export default function ProgressScreen() {
                 <View style={styles.prDivider} />
               )}
               {personalRecords.maxVolume && (
-                <View style={styles.prRow}>
-                  <Ionicons name="flame" size={24} color="#34C759" />
-                  <View style={styles.prInfo}>
+                <View style={staticStyles.prRow}>
+                  <Ionicons name="flame" size={24} color={colors.success} />
+                  <View style={staticStyles.prInfo}>
                     <Text style={styles.prLabel}>Best Volume</Text>
                     <Text style={styles.prValue}>
                       {formatVolume(personalRecords.maxVolume.total_volume)} lbs
@@ -351,7 +349,7 @@ export default function ProgressScreen() {
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Select Exercise</Text>
               <Pressable onPress={() => setSelectorOpen(false)}>
-                <Ionicons name="close" size={24} color="#000" />
+                <Ionicons name="close" size={24} color={colors.text} />
               </Pressable>
             </View>
             <FlatList
@@ -379,24 +377,7 @@ export default function ProgressScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F2F2F7',
-  },
-  header: {
-    paddingTop: 60,
-    paddingHorizontal: 24,
-    paddingBottom: 12,
-    backgroundColor: '#fff',
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#C6C6C8',
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#000',
-  },
+const staticStyles = StyleSheet.create({
   scrollContent: {
     flex: 1,
   },
@@ -404,53 +385,94 @@ const styles = StyleSheet.create({
     padding: 16,
     paddingBottom: 40,
   },
-  // Exercise Selector
-  exerciseSelector: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: '#fff',
-    padding: 16,
-    borderRadius: 12,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: '#C6C6C8',
-  },
-  exerciseSelectorPressed: {
-    backgroundColor: '#E8F0FE',
-  },
-  exerciseSelectorName: {
-    fontSize: 17,
-    fontWeight: '600',
-    color: '#000',
-  },
-  exerciseSelectorGroup: {
-    fontSize: 14,
-    color: '#8E8E93',
-    marginTop: 2,
-  },
-  // Controls
   controlsRow: {
     marginTop: 12,
   },
   chipRow: {
     gap: 8,
   },
+  noDataContainer: {
+    height: 200,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  prSection: {
+    marginTop: 16,
+  },
+  prRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  prInfo: {
+    flex: 1,
+  },
+  emptyState: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+});
+
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
+  header: {
+    paddingTop: 60,
+    paddingHorizontal: 24,
+    paddingBottom: 12,
+    backgroundColor: colors.surface,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.border,
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: colors.text,
+  },
+  // Exercise Selector
+  exerciseSelector: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: colors.surface,
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
+  },
+  exerciseSelectorPressed: {
+    backgroundColor: colors.pressed,
+  },
+  exerciseSelectorName: {
+    fontSize: 17,
+    fontWeight: '600',
+    color: colors.text,
+  },
+  exerciseSelectorGroup: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    marginTop: 2,
+  },
+  // Chips
   chip: {
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,
-    backgroundColor: '#fff',
+    backgroundColor: colors.surface,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: '#C6C6C8',
+    borderColor: colors.border,
   },
   chipSelected: {
-    backgroundColor: '#007AFF',
-    borderColor: '#007AFF',
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
   },
   chipText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#000',
+    color: colors.text,
   },
   chipTextSelected: {
     color: '#fff',
@@ -458,7 +480,7 @@ const styles = StyleSheet.create({
   // Toggle
   toggleContainer: {
     flexDirection: 'row',
-    backgroundColor: '#E5E5EA',
+    backgroundColor: colors.separator,
     borderRadius: 8,
     padding: 2,
     marginTop: 12,
@@ -470,33 +492,33 @@ const styles = StyleSheet.create({
     borderRadius: 6,
   },
   toggleSegmentSelected: {
-    backgroundColor: '#007AFF',
+    backgroundColor: colors.primary,
   },
   toggleText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#8E8E93',
+    color: colors.textSecondary,
   },
   toggleTextSelected: {
     color: '#fff',
   },
   // Chart
   chartCard: {
-    backgroundColor: '#fff',
+    backgroundColor: colors.surface,
     borderRadius: 12,
     padding: 16,
     marginTop: 16,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: '#C6C6C8',
+    borderColor: colors.border,
   },
   chartLabel: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#8E8E93',
+    color: colors.textSecondary,
     marginBottom: 12,
   },
   tooltipContainer: {
-    backgroundColor: '#333',
+    backgroundColor: colors.chartTooltipBg,
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 6,
@@ -504,98 +526,77 @@ const styles = StyleSheet.create({
   tooltipText: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#fff',
-  },
-  noDataContainer: {
-    height: 200,
-    alignItems: 'center',
-    justifyContent: 'center',
+    color: colors.chartTooltipText,
   },
   noDataText: {
     fontSize: 15,
-    color: '#8E8E93',
+    color: colors.textSecondary,
     marginTop: 8,
   },
   singlePointValue: {
     fontSize: 28,
     fontWeight: 'bold',
-    color: '#007AFF',
+    color: colors.primary,
   },
-  // PR Section placeholders
-  prSection: {
-    marginTop: 16,
-  },
+  // PR
   prSectionTitle: {
     fontSize: 17,
     fontWeight: '600',
-    color: '#000',
+    color: colors.text,
     marginBottom: 8,
   },
   prCard: {
-    backgroundColor: '#fff',
+    backgroundColor: colors.surface,
     borderRadius: 12,
     padding: 16,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: '#C6C6C8',
-  },
-  prRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  prInfo: {
-    flex: 1,
+    borderColor: colors.border,
   },
   prLabel: {
     fontSize: 13,
-    color: '#8E8E93',
+    color: colors.textSecondary,
   },
   prValue: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#000',
+    color: colors.text,
     marginTop: 2,
   },
   prReps: {
     fontSize: 15,
     fontWeight: '400',
-    color: '#8E8E93',
+    color: colors.textSecondary,
   },
   prDate: {
     fontSize: 13,
-    color: '#8E8E93',
+    color: colors.textSecondary,
     marginTop: 2,
   },
   prDivider: {
     height: StyleSheet.hairlineWidth,
-    backgroundColor: '#E5E5EA',
+    backgroundColor: colors.separator,
     marginVertical: 12,
   },
   // Empty state
-  emptyState: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   emptyStateTitle: {
     fontSize: 20,
     fontWeight: '600',
-    color: '#000',
+    color: colors.text,
     marginTop: 16,
   },
   emptyStateSubtitle: {
     fontSize: 15,
-    color: '#8E8E93',
+    color: colors.textSecondary,
     marginTop: 4,
   },
   // Modal
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.4)',
+    backgroundColor: colors.modalOverlay,
     justifyContent: 'flex-end',
   },
   modalContent: {
-    backgroundColor: '#fff',
+    backgroundColor: colors.surface,
     borderTopLeftRadius: 16,
     borderTopRightRadius: 16,
     maxHeight: '70%',
@@ -607,36 +608,36 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     padding: 16,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#C6C6C8',
+    borderBottomColor: colors.border,
   },
   modalTitle: {
     fontSize: 17,
     fontWeight: '600',
-    color: '#000',
+    color: colors.text,
   },
   exerciseRow: {
     paddingHorizontal: 16,
     paddingVertical: 14,
   },
   exerciseRowPressed: {
-    backgroundColor: '#E8F0FE',
+    backgroundColor: colors.pressed,
   },
   exerciseRowSelected: {
-    backgroundColor: '#F0F7FF',
+    backgroundColor: colors.selectedRow,
   },
   exerciseRowName: {
     fontSize: 16,
     fontWeight: '500',
-    color: '#000',
+    color: colors.text,
   },
   exerciseRowGroup: {
     fontSize: 13,
-    color: '#8E8E93',
+    color: colors.textSecondary,
     marginTop: 2,
   },
   separator: {
     height: StyleSheet.hairlineWidth,
-    backgroundColor: '#E5E5EA',
+    backgroundColor: colors.separator,
     marginLeft: 16,
   },
 });

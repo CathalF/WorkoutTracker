@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import {
   Alert,
   Pressable,
@@ -19,6 +19,7 @@ import {
   deleteSet,
   deleteWorkout,
 } from '../database/services';
+import { useTheme, ThemeColors } from '../theme';
 
 type Props = NativeStackScreenProps<HistoryStackParamList, 'WorkoutDetail'>;
 
@@ -66,6 +67,8 @@ function formatVolume(volume: number): string {
 }
 
 export default function WorkoutDetailScreen({ navigation, route }: Props) {
+  const colors = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const { workoutId } = route.params;
   const [workout, setWorkout] = useState<WorkoutDetail | null>(null);
   const [editingCell, setEditingCell] = useState<EditingCell | null>(null);
@@ -145,15 +148,15 @@ export default function WorkoutDetailScreen({ navigation, route }: Props) {
     return (
       <View style={styles.container}>
         <View style={styles.header}>
-          <Pressable onPress={() => navigation.goBack()} style={styles.headerSide}>
-            <Ionicons name="chevron-back" size={26} color="#007AFF" />
+          <Pressable onPress={() => navigation.goBack()} style={staticStyles.headerSide}>
+            <Ionicons name="chevron-back" size={26} color={colors.primary} />
           </Pressable>
-          <View style={styles.headerCenter}>
+          <View style={staticStyles.headerCenter}>
             <Text style={styles.headerTitle}>Workout</Text>
           </View>
-          <View style={styles.headerSide} />
+          <View style={staticStyles.headerSide} />
         </View>
-        <View style={styles.loadingContainer}>
+        <View style={staticStyles.loadingContainer}>
           <Text style={styles.loadingText}>Workout not found</Text>
         </View>
       </View>
@@ -169,7 +172,7 @@ export default function WorkoutDetailScreen({ navigation, route }: Props) {
       editingCell?.setId === set.id && editingCell.field === 'reps';
 
     return (
-      <View key={set.id} style={[styles.setRow, index % 2 === 1 && styles.setRowAlt]}>
+      <View key={set.id} style={[staticStyles.setRow, index % 2 === 1 && styles.setRowAlt]}>
         <Text style={styles.setNumber}>{index + 1}</Text>
 
         {isEditingWeight ? (
@@ -185,11 +188,11 @@ export default function WorkoutDetailScreen({ navigation, route }: Props) {
           />
         ) : (
           <Pressable
-            style={styles.editableCell}
+            style={staticStyles.editableCell}
             onPress={() => handleStartEdit(set.id, 'weight', set.weight)}
           >
             <Text style={styles.setCellText}>{set.weight} lbs</Text>
-            <Ionicons name="pencil-outline" size={12} color="#C7C7CC" />
+            <Ionicons name="pencil-outline" size={12} color={colors.textTertiary} />
           </Pressable>
         )}
 
@@ -206,20 +209,20 @@ export default function WorkoutDetailScreen({ navigation, route }: Props) {
           />
         ) : (
           <Pressable
-            style={styles.editableCell}
+            style={staticStyles.editableCell}
             onPress={() => handleStartEdit(set.id, 'reps', set.reps)}
           >
             <Text style={styles.setCellText}>{set.reps}</Text>
-            <Ionicons name="pencil-outline" size={12} color="#C7C7CC" />
+            <Ionicons name="pencil-outline" size={12} color={colors.textTertiary} />
           </Pressable>
         )}
 
         <Pressable
           onPress={() => handleDeleteSet(set.id)}
           hitSlop={8}
-          style={styles.deleteSetButton}
+          style={staticStyles.deleteSetButton}
         >
-          <Ionicons name="trash-outline" size={16} color="#FF3B30" />
+          <Ionicons name="trash-outline" size={16} color={colors.destructive} />
         </Pressable>
       </View>
     );
@@ -227,11 +230,11 @@ export default function WorkoutDetailScreen({ navigation, route }: Props) {
 
   const renderExerciseCard = (exercise: ExerciseWithSets) => (
     <View key={exercise.exercise_id} style={styles.exerciseCard}>
-      <View style={styles.exerciseHeader}>
+      <View style={staticStyles.exerciseHeader}>
         <Text style={styles.exerciseTitle}>{exercise.exercise_name}</Text>
       </View>
 
-      <View style={styles.setHeaderRow}>
+      <View style={staticStyles.setHeaderRow}>
         <Text style={styles.setHeaderLabel}>Set</Text>
         <Text style={styles.setHeaderLabel}>Weight</Text>
         <Text style={styles.setHeaderLabel}>Reps</Text>
@@ -245,20 +248,20 @@ export default function WorkoutDetailScreen({ navigation, route }: Props) {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Pressable onPress={() => navigation.goBack()} style={styles.headerSide}>
-          <Ionicons name="chevron-back" size={26} color="#007AFF" />
+        <Pressable onPress={() => navigation.goBack()} style={staticStyles.headerSide}>
+          <Ionicons name="chevron-back" size={26} color={colors.primary} />
         </Pressable>
-        <View style={styles.headerCenter}>
+        <View style={staticStyles.headerCenter}>
           <Text style={styles.headerTitle}>{workout.muscle_group_name}</Text>
         </View>
-        <Pressable onPress={handleDeleteWorkout} style={styles.headerSide}>
-          <Ionicons name="trash-outline" size={22} color="#FF3B30" />
+        <Pressable onPress={handleDeleteWorkout} style={staticStyles.headerSide}>
+          <Ionicons name="trash-outline" size={22} color={colors.destructive} />
         </Pressable>
       </View>
 
       <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
+        style={staticStyles.scrollView}
+        contentContainerStyle={staticStyles.scrollContent}
         keyboardShouldPersistTaps="handled"
       >
         <View style={styles.summarySection}>
@@ -279,22 +282,7 @@ export default function WorkoutDetailScreen({ navigation, route }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F2F2F7',
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingTop: 56,
-    paddingHorizontal: 16,
-    paddingBottom: 12,
-    backgroundColor: '#fff',
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#C6C6C8',
-  },
+const staticStyles = StyleSheet.create({
   headerSide: {
     width: 44,
     alignItems: 'center',
@@ -303,19 +291,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flex: 1,
   },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#000',
-  },
   loadingContainer: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  loadingText: {
-    fontSize: 16,
-    color: '#8E8E93',
   },
   scrollView: {
     flex: 1,
@@ -324,49 +303,11 @@ const styles = StyleSheet.create({
     padding: 16,
     paddingBottom: 40,
   },
-  summarySection: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 16,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: '#C6C6C8',
-  },
-  summaryDate: {
-    fontSize: 17,
-    fontWeight: '600',
-    color: '#000',
-  },
-  summaryStats: {
-    fontSize: 14,
-    color: '#8E8E93',
-    marginTop: 4,
-  },
-  summaryNotes: {
-    fontSize: 15,
-    color: '#000',
-    marginTop: 8,
-    fontStyle: 'italic',
-  },
-  exerciseCard: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    marginBottom: 12,
-    padding: 16,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: '#C6C6C8',
-  },
   exerciseHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     marginBottom: 12,
-  },
-  exerciseTitle: {
-    fontSize: 17,
-    fontWeight: '600',
-    color: '#000',
-    flex: 1,
   },
   setHeaderRow: {
     flexDirection: 'row',
@@ -374,30 +315,11 @@ const styles = StyleSheet.create({
     marginBottom: 6,
     paddingHorizontal: 2,
   },
-  setHeaderLabel: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#8E8E93',
-    textTransform: 'uppercase',
-    flex: 1,
-    textAlign: 'center',
-  },
   setRow: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 8,
     paddingHorizontal: 2,
-  },
-  setRowAlt: {
-    backgroundColor: '#FAFAFA',
-    borderRadius: 6,
-  },
-  setNumber: {
-    width: 24,
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#8E8E93',
-    textAlign: 'center',
   },
   editableCell: {
     flex: 1,
@@ -406,26 +328,110 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 4,
   },
+  deleteSetButton: {
+    width: 28,
+    alignItems: 'center',
+  },
+});
+
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingTop: 56,
+    paddingHorizontal: 16,
+    paddingBottom: 12,
+    backgroundColor: colors.surface,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.border,
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: colors.text,
+  },
+  loadingText: {
+    fontSize: 16,
+    color: colors.textSecondary,
+  },
+  summarySection: {
+    backgroundColor: colors.surface,
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
+  },
+  summaryDate: {
+    fontSize: 17,
+    fontWeight: '600',
+    color: colors.text,
+  },
+  summaryStats: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    marginTop: 4,
+  },
+  summaryNotes: {
+    fontSize: 15,
+    color: colors.text,
+    marginTop: 8,
+    fontStyle: 'italic',
+  },
+  exerciseCard: {
+    backgroundColor: colors.surface,
+    borderRadius: 12,
+    marginBottom: 12,
+    padding: 16,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
+  },
+  exerciseTitle: {
+    fontSize: 17,
+    fontWeight: '600',
+    color: colors.text,
+    flex: 1,
+  },
+  setHeaderLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: colors.textSecondary,
+    textTransform: 'uppercase',
+    flex: 1,
+    textAlign: 'center',
+  },
+  setRowAlt: {
+    backgroundColor: colors.surfaceAlt,
+    borderRadius: 6,
+  },
+  setNumber: {
+    width: 24,
+    fontSize: 15,
+    fontWeight: '600',
+    color: colors.textSecondary,
+    textAlign: 'center',
+  },
   setCellText: {
     fontSize: 16,
     fontWeight: '500',
-    color: '#000',
+    color: colors.text,
   },
   editInput: {
     flex: 1,
     height: 36,
     borderWidth: 1,
-    borderColor: '#007AFF',
+    borderColor: colors.primary,
     borderRadius: 8,
     textAlign: 'center',
     fontSize: 16,
     fontWeight: '500',
-    color: '#000',
+    color: colors.text,
     marginHorizontal: 4,
-    backgroundColor: '#fff',
-  },
-  deleteSetButton: {
-    width: 28,
-    alignItems: 'center',
+    backgroundColor: colors.surface,
   },
 });

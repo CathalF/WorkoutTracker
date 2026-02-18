@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Alert,
   Keyboard,
@@ -13,6 +13,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { WorkoutStackParamList } from '../navigation/WorkoutStackNavigator';
 import { createWorkout, addSet } from '../database/services';
+import { useTheme, ThemeColors } from '../theme';
 
 type Props = NativeStackScreenProps<WorkoutStackParamList, 'ActiveWorkout'>;
 
@@ -28,6 +29,8 @@ interface ActiveExercise {
 }
 
 export default function ActiveWorkoutScreen({ navigation, route }: Props) {
+  const colors = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const { muscleGroupId, splitLabel, muscleGroupIds } = route.params;
   const [exercises, setExercises] = useState<ActiveExercise[]>([]);
   const lastSelectedRef = useRef<string | null>(null);
@@ -37,10 +40,8 @@ export default function ActiveWorkoutScreen({ navigation, route }: Props) {
     const selected = route.params.selectedExercise;
     if (!selected) return;
 
-    const key = `${selected.id}-${Date.now()}`;
     if (lastSelectedRef.current === `${selected.id}`) return;
 
-    // Only add if not already in the list
     const alreadyExists = exercises.some((e) => e.exerciseId === selected.id);
     if (alreadyExists) return;
 
@@ -138,7 +139,6 @@ export default function ActiveWorkoutScreen({ navigation, route }: Props) {
   };
 
   const handleFinishWorkout = () => {
-    // Validate: at least one complete set
     const hasCompleteSet = exercises.some((ex) =>
       ex.sets.some((s) => {
         const w = parseFloat(s.weight) || 0;
@@ -152,7 +152,6 @@ export default function ActiveWorkoutScreen({ navigation, route }: Props) {
       return;
     }
 
-    // Save to DB
     const today = new Date().toISOString().split('T')[0];
     const workoutId = createWorkout(today, muscleGroupId);
 
@@ -201,48 +200,48 @@ export default function ActiveWorkoutScreen({ navigation, route }: Props) {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Pressable onPress={handleDiscard} style={styles.headerSide}>
-          <Ionicons name="close" size={26} color="#FF3B30" />
+        <Pressable onPress={handleDiscard} style={staticStyles.headerSide}>
+          <Ionicons name="close" size={26} color={colors.destructive} />
         </Pressable>
-        <View style={styles.headerCenter}>
+        <View style={staticStyles.headerCenter}>
           <Text style={styles.headerTitle}>{splitLabel}</Text>
           <Text style={styles.headerDate}>{todayFormatted}</Text>
         </View>
-        <Pressable onPress={handleFinishWorkout} style={styles.finishButton}>
+        <Pressable onPress={handleFinishWorkout} style={staticStyles.finishButton}>
           <Text style={styles.finishButtonText}>Finish</Text>
         </Pressable>
       </View>
 
       <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
+        style={staticStyles.scrollView}
+        contentContainerStyle={staticStyles.scrollContent}
         keyboardShouldPersistTaps="handled"
         onScrollBeginDrag={() => Keyboard.dismiss()}
       >
         {exercises.length === 0 ? (
-          <View style={styles.emptyState}>
-            <Ionicons name="barbell-outline" size={64} color="#C7C7CC" />
+          <View style={staticStyles.emptyState}>
+            <Ionicons name="barbell-outline" size={64} color={colors.textTertiary} />
             <Text style={styles.emptyStateTitle}>No exercises yet</Text>
             <Text style={styles.emptyStateSubtitle}>
               Add your first exercise to get started
             </Text>
             <Pressable style={styles.emptyAddButton} onPress={handleAddExercise}>
               <Ionicons name="add-circle" size={22} color="#fff" />
-              <Text style={styles.emptyAddButtonText}>Add Exercise</Text>
+              <Text style={staticStyles.emptyAddButtonText}>Add Exercise</Text>
             </Pressable>
           </View>
         ) : (
           <>
             {exercises.map((exercise, exIdx) => (
               <View key={exercise.exerciseId} style={styles.exerciseCard}>
-                <View style={styles.exerciseHeader}>
+                <View style={staticStyles.exerciseHeader}>
                   <Text style={styles.exerciseTitle}>{exercise.exerciseName}</Text>
                   <Pressable onPress={() => removeExercise(exIdx)} hitSlop={8}>
-                    <Ionicons name="close-circle" size={22} color="#FF3B30" />
+                    <Ionicons name="close-circle" size={22} color={colors.destructive} />
                   </Pressable>
                 </View>
 
-                <View style={styles.setHeaderRow}>
+                <View style={staticStyles.setHeaderRow}>
                   <Text style={styles.setHeaderLabel}>Set</Text>
                   <Text style={styles.setHeaderLabel}>Weight (lb)</Text>
                   <Text style={styles.setHeaderLabel}>Reps</Text>
@@ -250,10 +249,10 @@ export default function ActiveWorkoutScreen({ navigation, route }: Props) {
                 </View>
 
                 {exercise.sets.map((set, setIdx) => (
-                  <View key={setIdx} style={styles.setRow}>
+                  <View key={setIdx} style={staticStyles.setRow}>
                     <Text style={styles.setNumber}>{setIdx + 1}</Text>
 
-                    <View style={styles.inputGroup}>
+                    <View style={staticStyles.inputGroup}>
                       <Pressable
                         style={styles.incrementButton}
                         onPress={() => incrementWeight(exIdx, setIdx, -5)}
@@ -266,7 +265,7 @@ export default function ActiveWorkoutScreen({ navigation, route }: Props) {
                         onChangeText={(v) => updateSet(exIdx, setIdx, 'weight', v)}
                         keyboardType="numeric"
                         placeholder="0"
-                        placeholderTextColor="#C7C7CC"
+                        placeholderTextColor={colors.textTertiary}
                         selectTextOnFocus
                       />
                       <Pressable
@@ -277,7 +276,7 @@ export default function ActiveWorkoutScreen({ navigation, route }: Props) {
                       </Pressable>
                     </View>
 
-                    <View style={styles.inputGroup}>
+                    <View style={staticStyles.inputGroup}>
                       <Pressable
                         style={styles.incrementButton}
                         onPress={() => incrementReps(exIdx, setIdx, -1)}
@@ -290,7 +289,7 @@ export default function ActiveWorkoutScreen({ navigation, route }: Props) {
                         onChangeText={(v) => updateSet(exIdx, setIdx, 'reps', v)}
                         keyboardType="numeric"
                         placeholder="0"
-                        placeholderTextColor="#C7C7CC"
+                        placeholderTextColor={colors.textTertiary}
                         selectTextOnFocus
                       />
                       <Pressable
@@ -304,30 +303,30 @@ export default function ActiveWorkoutScreen({ navigation, route }: Props) {
                     <Pressable
                       onPress={() => removeSet(exIdx, setIdx)}
                       hitSlop={8}
-                      style={styles.deleteSetButton}
+                      style={staticStyles.deleteSetButton}
                     >
-                      <Ionicons name="trash-outline" size={18} color="#FF3B30" />
+                      <Ionicons name="trash-outline" size={18} color={colors.destructive} />
                     </Pressable>
                   </View>
                 ))}
 
                 <Pressable
-                  style={styles.addSetButton}
+                  style={staticStyles.addSetButton}
                   onPress={() => addSetToExercise(exIdx)}
                 >
-                  <Ionicons name="add" size={18} color="#007AFF" />
+                  <Ionicons name="add" size={18} color={colors.primary} />
                   <Text style={styles.addSetText}>Add Set</Text>
                 </Pressable>
               </View>
             ))}
 
             <Pressable style={styles.addExerciseButton} onPress={handleAddExercise}>
-              <Ionicons name="add-circle-outline" size={22} color="#007AFF" />
+              <Ionicons name="add-circle-outline" size={22} color={colors.primary} />
               <Text style={styles.addExerciseText}>Add Exercise</Text>
             </Pressable>
 
             <Pressable style={styles.finishWorkoutButton} onPress={handleFinishWorkout}>
-              <Text style={styles.finishWorkoutButtonText}>Finish Workout</Text>
+              <Text style={staticStyles.finishWorkoutButtonText}>Finish Workout</Text>
             </Pressable>
           </>
         )}
@@ -336,22 +335,7 @@ export default function ActiveWorkoutScreen({ navigation, route }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F2F2F7',
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingTop: 56,
-    paddingHorizontal: 16,
-    paddingBottom: 12,
-    backgroundColor: '#fff',
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#C6C6C8',
-  },
+const staticStyles = StyleSheet.create({
   headerSide: {
     width: 60,
   },
@@ -359,24 +343,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flex: 1,
   },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#000',
-  },
-  headerDate: {
-    fontSize: 13,
-    color: '#8E8E93',
-    marginTop: 2,
-  },
   finishButton: {
     width: 60,
     alignItems: 'flex-end',
-  },
-  finishButtonText: {
-    fontSize: 17,
-    fontWeight: '600',
-    color: '#007AFF',
   },
   scrollView: {
     flex: 1,
@@ -385,46 +354,15 @@ const styles = StyleSheet.create({
     padding: 16,
     paddingBottom: 40,
   },
-  // Empty state
   emptyState: {
     alignItems: 'center',
     justifyContent: 'center',
     paddingTop: 80,
   },
-  emptyStateTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: '#000',
-    marginTop: 16,
-  },
-  emptyStateSubtitle: {
-    fontSize: 15,
-    color: '#8E8E93',
-    marginTop: 4,
-  },
-  emptyAddButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#007AFF',
-    borderRadius: 12,
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    marginTop: 24,
-    gap: 8,
-  },
   emptyAddButtonText: {
     fontSize: 16,
     fontWeight: '600',
     color: '#fff',
-  },
-  // Exercise card
-  exerciseCard: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    marginBottom: 12,
-    padding: 16,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: '#C6C6C8',
   },
   exerciseHeader: {
     flexDirection: 'row',
@@ -432,37 +370,16 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginBottom: 12,
   },
-  exerciseTitle: {
-    fontSize: 17,
-    fontWeight: '600',
-    color: '#000',
-    flex: 1,
-  },
   setHeaderRow: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 6,
     paddingHorizontal: 2,
   },
-  setHeaderLabel: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#8E8E93',
-    textTransform: 'uppercase',
-    flex: 1,
-    textAlign: 'center',
-  },
   setRow: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 8,
-  },
-  setNumber: {
-    width: 24,
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#8E8E93',
-    textAlign: 'center',
   },
   inputGroup: {
     flexDirection: 'row',
@@ -470,42 +387,6 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     gap: 4,
-  },
-  incrementButton: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: '#F2F2F7',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  incrementText: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#007AFF',
-    lineHeight: 20,
-  },
-  weightInput: {
-    width: 56,
-    height: 36,
-    borderWidth: 1,
-    borderColor: '#E5E5EA',
-    borderRadius: 8,
-    textAlign: 'center',
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#000',
-  },
-  repsInput: {
-    width: 44,
-    height: 36,
-    borderWidth: 1,
-    borderColor: '#E5E5EA',
-    borderRadius: 8,
-    textAlign: 'center',
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#000',
   },
   deleteSetButton: {
     width: 28,
@@ -519,39 +400,157 @@ const styles = StyleSheet.create({
     marginTop: 4,
     gap: 4,
   },
+  finishWorkoutButtonText: {
+    fontSize: 17,
+    fontWeight: '700',
+    color: '#fff',
+  },
+});
+
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingTop: 56,
+    paddingHorizontal: 16,
+    paddingBottom: 12,
+    backgroundColor: colors.surface,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.border,
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: colors.text,
+  },
+  headerDate: {
+    fontSize: 13,
+    color: colors.textSecondary,
+    marginTop: 2,
+  },
+  finishButtonText: {
+    fontSize: 17,
+    fontWeight: '600',
+    color: colors.primary,
+  },
+  emptyStateTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: colors.text,
+    marginTop: 16,
+  },
+  emptyStateSubtitle: {
+    fontSize: 15,
+    color: colors.textSecondary,
+    marginTop: 4,
+  },
+  emptyAddButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.primary,
+    borderRadius: 12,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    marginTop: 24,
+    gap: 8,
+  },
+  exerciseCard: {
+    backgroundColor: colors.surface,
+    borderRadius: 12,
+    marginBottom: 12,
+    padding: 16,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
+  },
+  exerciseTitle: {
+    fontSize: 17,
+    fontWeight: '600',
+    color: colors.text,
+    flex: 1,
+  },
+  setHeaderLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: colors.textSecondary,
+    textTransform: 'uppercase',
+    flex: 1,
+    textAlign: 'center',
+  },
+  setNumber: {
+    width: 24,
+    fontSize: 15,
+    fontWeight: '600',
+    color: colors.textSecondary,
+    textAlign: 'center',
+  },
+  incrementButton: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: colors.background,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  incrementText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: colors.primary,
+    lineHeight: 20,
+  },
+  weightInput: {
+    width: 56,
+    height: 36,
+    borderWidth: 1,
+    borderColor: colors.separator,
+    borderRadius: 8,
+    textAlign: 'center',
+    fontSize: 16,
+    fontWeight: '500',
+    color: colors.text,
+  },
+  repsInput: {
+    width: 44,
+    height: 36,
+    borderWidth: 1,
+    borderColor: colors.separator,
+    borderRadius: 8,
+    textAlign: 'center',
+    fontSize: 16,
+    fontWeight: '500',
+    color: colors.text,
+  },
   addSetText: {
     fontSize: 15,
     fontWeight: '500',
-    color: '#007AFF',
+    color: colors.primary,
   },
-  // Footer buttons
   addExerciseButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#fff',
+    backgroundColor: colors.surface,
     borderRadius: 12,
     paddingVertical: 14,
     marginBottom: 12,
     gap: 8,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: '#C6C6C8',
+    borderColor: colors.border,
   },
   addExerciseText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#007AFF',
+    color: colors.primary,
   },
   finishWorkoutButton: {
-    backgroundColor: '#34C759',
+    backgroundColor: colors.success,
     borderRadius: 12,
     paddingVertical: 16,
     alignItems: 'center',
     marginBottom: 16,
-  },
-  finishWorkoutButtonText: {
-    fontSize: 17,
-    fontWeight: '700',
-    color: '#fff',
   },
 });

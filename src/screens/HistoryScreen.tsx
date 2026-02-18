@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Pressable,
   ScrollView,
@@ -14,6 +14,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { HistoryStackParamList } from '../navigation/HistoryStackNavigator';
 import { MuscleGroup, WorkoutSummary } from '../types';
 import { getAllMuscleGroups, getWorkouts } from '../database/services';
+import { useTheme, ThemeColors } from '../theme';
 
 type NavigationProp = NativeStackNavigationProp<HistoryStackParamList, 'HistoryList'>;
 
@@ -28,7 +29,6 @@ function formatSectionDate(dateStr: string): string {
   const yesterday = new Date(today);
   yesterday.setDate(yesterday.getDate() - 1);
 
-  // Parse the date string as local date (YYYY-MM-DD format)
   const parts = dateStr.split('-');
   const date = new Date(
     parseInt(parts[0], 10),
@@ -99,6 +99,8 @@ function groupByDate(workouts: WorkoutSummary[]): Section[] {
 
 export default function HistoryScreen() {
   const navigation = useNavigation<NavigationProp>();
+  const colors = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [workouts, setWorkouts] = useState<WorkoutSummary[]>([]);
   const [muscleGroups, setMuscleGroups] = useState<MuscleGroup[]>([]);
   const [selectedFilterId, setSelectedFilterId] = useState<number | null>(null);
@@ -111,7 +113,6 @@ export default function HistoryScreen() {
     setWorkouts(results);
   }, [selectedFilterId]);
 
-  // Refresh data when screen comes into focus
   useFocusEffect(
     useCallback(() => {
       loadData();
@@ -122,7 +123,6 @@ export default function HistoryScreen() {
     setSelectedFilterId(muscleGroupId);
   };
 
-  // Re-load workouts when filter changes
   useEffect(() => {
     const results = getWorkouts(selectedFilterId ?? undefined);
     setWorkouts(results);
@@ -156,8 +156,8 @@ export default function HistoryScreen() {
       style={({ pressed }) => [styles.workoutCard, pressed && styles.workoutCardPressed]}
       onPress={() => handleWorkoutPress(item.id)}
     >
-      <View style={styles.workoutCardContent}>
-        <View style={styles.workoutCardLeft}>
+      <View style={staticStyles.workoutCardContent}>
+        <View style={staticStyles.workoutCardLeft}>
           <Text style={styles.workoutMuscleGroup}>{item.muscle_group_name}</Text>
           <Text style={styles.workoutTime}>{formatTime(item.created_at)}</Text>
           <Text style={styles.workoutStats}>
@@ -166,7 +166,7 @@ export default function HistoryScreen() {
             {formatVolume(item.total_volume)} lbs volume
           </Text>
         </View>
-        <Ionicons name="chevron-forward" size={20} color="#C7C7CC" />
+        <Ionicons name="chevron-forward" size={20} color={colors.textTertiary} />
       </View>
     </Pressable>
   );
@@ -174,8 +174,8 @@ export default function HistoryScreen() {
   const renderEmpty = () => {
     if (selectedFilterId !== null) {
       return (
-        <View style={styles.emptyState}>
-          <Ionicons name="filter-outline" size={64} color="#C7C7CC" />
+        <View style={staticStyles.emptyState}>
+          <Ionicons name="filter-outline" size={64} color={colors.textTertiary} />
           <Text style={styles.emptyStateTitle}>No {selectedFilterName} workouts</Text>
           <Text style={styles.emptyStateSubtitle}>
             Try a different filter or log a workout
@@ -185,8 +185,8 @@ export default function HistoryScreen() {
     }
 
     return (
-      <View style={styles.emptyState}>
-        <Ionicons name="time-outline" size={64} color="#C7C7CC" />
+      <View style={staticStyles.emptyState}>
+        <Ionicons name="time-outline" size={64} color={colors.textTertiary} />
         <Text style={styles.emptyStateTitle}>No workouts yet</Text>
         <Text style={styles.emptyStateSubtitle}>
           Complete a workout to see it here
@@ -205,7 +205,7 @@ export default function HistoryScreen() {
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.filterScroll}
+          contentContainerStyle={staticStyles.filterScroll}
         >
           <Pressable
             style={[
@@ -252,7 +252,7 @@ export default function HistoryScreen() {
         renderItem={renderWorkoutCard}
         ListEmptyComponent={renderEmpty}
         contentContainerStyle={
-          sections.length === 0 ? styles.emptyListContent : styles.listContent
+          sections.length === 0 ? staticStyles.emptyListContent : staticStyles.listContent
         }
         stickySectionHeadersEnabled={false}
         refreshing={refreshing}
@@ -262,77 +262,16 @@ export default function HistoryScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F2F2F7',
-  },
-  header: {
-    paddingTop: 60,
-    paddingHorizontal: 24,
-    paddingBottom: 12,
-    backgroundColor: '#fff',
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#000',
-  },
-  filterContainer: {
-    backgroundColor: '#fff',
-    paddingBottom: 12,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#C6C6C8',
-  },
+const staticStyles = StyleSheet.create({
   filterScroll: {
     paddingHorizontal: 16,
     gap: 8,
-  },
-  filterChip: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: '#F2F2F7',
-  },
-  filterChipSelected: {
-    backgroundColor: '#007AFF',
-  },
-  filterChipText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#000',
-  },
-  filterChipTextSelected: {
-    color: '#fff',
   },
   listContent: {
     paddingBottom: 20,
   },
   emptyListContent: {
     flex: 1,
-  },
-  sectionHeader: {
-    paddingVertical: 8,
-    paddingHorizontal: 24,
-    backgroundColor: '#F2F2F7',
-  },
-  sectionHeaderText: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#8E8E93',
-    textTransform: 'uppercase',
-  },
-  workoutCard: {
-    backgroundColor: '#fff',
-    marginHorizontal: 16,
-    marginVertical: 4,
-    borderRadius: 12,
-    padding: 16,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: '#C6C6C8',
-  },
-  workoutCardPressed: {
-    backgroundColor: '#E8F0FE',
   },
   workoutCardContent: {
     flexDirection: 'row',
@@ -342,36 +281,100 @@ const styles = StyleSheet.create({
   workoutCardLeft: {
     flex: 1,
   },
-  workoutMuscleGroup: {
-    fontSize: 17,
-    fontWeight: '600',
-    color: '#000',
-  },
-  workoutTime: {
-    fontSize: 14,
-    color: '#8E8E93',
-    marginTop: 2,
-  },
-  workoutStats: {
-    fontSize: 14,
-    color: '#8E8E93',
-    marginTop: 4,
-  },
   emptyState: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
     paddingTop: 80,
   },
+});
+
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
+  header: {
+    paddingTop: 60,
+    paddingHorizontal: 24,
+    paddingBottom: 12,
+    backgroundColor: colors.surface,
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: colors.text,
+  },
+  filterContainer: {
+    backgroundColor: colors.surface,
+    paddingBottom: 12,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.border,
+  },
+  filterChip: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: colors.background,
+  },
+  filterChipSelected: {
+    backgroundColor: colors.primary,
+  },
+  filterChipText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.text,
+  },
+  filterChipTextSelected: {
+    color: '#fff',
+  },
+  sectionHeader: {
+    paddingVertical: 8,
+    paddingHorizontal: 24,
+    backgroundColor: colors.background,
+  },
+  sectionHeaderText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: colors.textSecondary,
+    textTransform: 'uppercase',
+  },
+  workoutCard: {
+    backgroundColor: colors.surface,
+    marginHorizontal: 16,
+    marginVertical: 4,
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
+  },
+  workoutCardPressed: {
+    backgroundColor: colors.pressed,
+  },
+  workoutMuscleGroup: {
+    fontSize: 17,
+    fontWeight: '600',
+    color: colors.text,
+  },
+  workoutTime: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    marginTop: 2,
+  },
+  workoutStats: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    marginTop: 4,
+  },
   emptyStateTitle: {
     fontSize: 20,
     fontWeight: '600',
-    color: '#000',
+    color: colors.text,
     marginTop: 16,
   },
   emptyStateSubtitle: {
     fontSize: 15,
-    color: '#8E8E93',
+    color: colors.textSecondary,
     marginTop: 4,
   },
 });

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -6,6 +6,7 @@ import { useNavigation } from '@react-navigation/native';
 import { WorkoutStackParamList } from '../navigation/WorkoutStackNavigator';
 import { MuscleGroup } from '../types';
 import { getAllMuscleGroups } from '../database/services';
+import { useTheme, ThemeColors } from '../theme';
 
 type NavigationProp = NativeStackNavigationProp<WorkoutStackParamList, 'StartWorkout'>;
 
@@ -31,6 +32,8 @@ function formatDate(): string {
 
 export default function StartWorkoutScreen() {
   const navigation = useNavigation<NavigationProp>();
+  const colors = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [muscleGroups, setMuscleGroups] = useState<MuscleGroup[]>([]);
 
   useEffect(() => {
@@ -42,7 +45,6 @@ export default function StartWorkoutScreen() {
     let primaryMuscleGroupId = 0;
 
     if (split.muscleGroupNames.length === 0) {
-      // Custom — show all exercises, use first muscle group as default
       if (muscleGroups.length > 0) {
         primaryMuscleGroupId = muscleGroups[0].id;
       }
@@ -67,7 +69,7 @@ export default function StartWorkoutScreen() {
       style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
       onPress={() => handleSplitPress(item)}
     >
-      <Ionicons name={item.icon} size={32} color="#007AFF" />
+      <Ionicons name={item.icon} size={32} color={colors.primary} />
       <Text style={styles.cardLabel}>{item.label}</Text>
     </Pressable>
   );
@@ -90,25 +92,25 @@ export default function StartWorkoutScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F2F2F7',
+    backgroundColor: colors.background,
   },
   header: {
     paddingTop: 60,
     paddingHorizontal: 24,
     paddingBottom: 16,
-    backgroundColor: '#fff',
+    backgroundColor: colors.surface,
   },
   title: {
     fontSize: 28,
     fontWeight: 'bold',
-    color: '#000',
+    color: colors.text,
   },
   subtitle: {
     fontSize: 16,
-    color: '#8E8E93',
+    color: colors.textSecondary,
     marginTop: 4,
   },
   grid: {
@@ -120,22 +122,22 @@ const styles = StyleSheet.create({
   },
   card: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: colors.surface,
     borderRadius: 12,
     paddingVertical: 24,
     alignItems: 'center',
     justifyContent: 'center',
     marginHorizontal: 6,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: '#C6C6C8',
+    borderColor: colors.border,
   },
   cardPressed: {
-    backgroundColor: '#E8F0FE',
+    backgroundColor: colors.pressed,
   },
   cardLabel: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#000',
+    color: colors.text,
     marginTop: 8,
     textAlign: 'center',
   },

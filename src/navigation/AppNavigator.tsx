@@ -4,10 +4,13 @@ import ExerciseLibraryScreen from '../screens/ExerciseLibraryScreen';
 import WorkoutStackNavigator from './WorkoutStackNavigator';
 import HistoryStackNavigator from './HistoryStackNavigator';
 import ProgressScreen from '../screens/ProgressScreen';
+import { useTheme } from '../theme';
 
 const Tab = createBottomTabNavigator();
 
 export default function AppNavigator() {
+  const colors = useTheme();
+
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -33,8 +36,8 @@ export default function AppNavigator() {
 
           return <Ionicons name={iconName} size={size} color={color} />;
         },
-        tabBarActiveTintColor: '#007AFF',
-        tabBarInactiveTintColor: 'gray',
+        tabBarActiveTintColor: colors.tabBarActive,
+        tabBarInactiveTintColor: colors.tabBarInactive,
       })}
     >
       <Tab.Screen
