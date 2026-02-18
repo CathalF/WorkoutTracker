@@ -6,6 +6,11 @@ import {
   WorkoutSet,
   WorkoutDetail,
   WorkoutSummary,
+  LoggedExercise,
+  ExerciseProgressPoint,
+  ExerciseVolumePoint,
+  PersonalRecord,
+  VolumeRecord,
 } from '../types';
 
 export function getAllMuscleGroups(): MuscleGroup[] {
@@ -191,4 +196,92 @@ export function updateSet(setId: number, weight: number, reps: number): void {
 export function deleteSet(setId: number): void {
   const db = getDatabase();
   db.runSync('DELETE FROM sets WHERE id = ?', setId);
+}
+
+export function getLoggedExercises(): LoggedExercise[] {
+  const db = getDatabase();
+  return db.getAllSync<LoggedExercise>(
+    `SELECT DISTINCT e.id, e.name, mg.name AS muscle_group_name
+     FROM sets s
+     JOIN exercises e ON s.exercise_id = e.id
+     JOIN muscle_groups mg ON e.muscle_group_id = mg.id
+     ORDER BY e.name`
+  );
+}
+
+export function getExerciseProgress(exerciseId: number, dateFrom?: string): ExerciseProgressPoint[] {
+  const db = getDatabase();
+  if (dateFrom) {
+    return db.getAllSync<ExerciseProgressPoint>(
+      `SELECT w.date, MAX(s.weight) AS max_weight
+       FROM sets s
+       JOIN workouts w ON s.workout_id = w.id
+       WHERE s.exercise_id = ? AND w.date >= ?
+       GROUP BY w.id
+       ORDER BY w.date ASC`,
+      exerciseId,
+      dateFrom
+    );
+  }
+  return db.getAllSync<ExerciseProgressPoint>(
+    `SELECT w.date, MAX(s.weight) AS max_weight
+     FROM sets s
+     JOIN workouts w ON s.workout_id = w.id
+     WHERE s.exercise_id = ?
+     GROUP BY w.id
+     ORDER BY w.date ASC`,
+    exerciseId
+  );
+}
+
+export function getExerciseVolume(exerciseId: number, dateFrom?: string): ExerciseVolumePoint[] {
+  const db = getDatabase();
+  if (dateFrom) {
+    return db.getAllSync<ExerciseVolumePoint>(
+      `SELECT w.date, SUM(s.weight * s.reps) AS total_volume
+       FROM sets s
+       JOIN workouts w ON s.workout_id = w.id
+       WHERE s.exercise_id = ? AND w.date >= ?
+       GROUP BY w.id
+       ORDER BY w.date ASC`,
+      exerciseId,
+      dateFrom
+    );
+  }
+  return db.getAllSync<ExerciseVolumePoint>(
+    `SELECT w.date, SUM(s.weight * s.reps) AS total_volume
+     FROM sets s
+     JOIN workouts w ON s.workout_id = w.id
+     WHERE s.exercise_id = ?
+     GROUP BY w.id
+     ORDER BY w.date ASC`,
+    exerciseId
+  );
+}
+
+export function getPersonalRecords(exerciseId: number): { maxWeight: PersonalRecord | null; maxVolume: VolumeRecord | null } {
+  const db = getDatabase();
+
+  const maxWeight = db.getFirstSync<PersonalRecord>(
+    `SELECT s.weight, s.reps, w.date
+     FROM sets s
+     JOIN workouts w ON s.workout_id = w.id
+     WHERE s.exercise_id = ?
+     ORDER BY s.weight DESC
+     LIMIT 1`,
+    exerciseId
+  ) ?? null;
+
+  const maxVolume = db.getFirstSync<VolumeRecord>(
+    `SELECT w.date, SUM(s.weight * s.reps) AS total_volume
+     FROM sets s
+     JOIN workouts w ON s.workout_id = w.id
+     WHERE s.exercise_id = ?
+     GROUP BY w.id
+     ORDER BY total_volume DESC
+     LIMIT 1`,
+    exerciseId
+  ) ?? null;
+
+  return { maxWeight, maxVolume };
 }

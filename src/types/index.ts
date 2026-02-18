@@ -51,3 +51,30 @@ export interface WorkoutSummary {
   total_volume: number;
   created_at: string;
 }
+
+export interface ExerciseProgressPoint {
+  date: string;
+  max_weight: number;
+}
+
+export interface ExerciseVolumePoint {
+  date: string;
+  total_volume: number;
+}
+
+export interface PersonalRecord {
+  weight: number;
+  reps: number;
+  date: string;
+}
+
+export interface VolumeRecord {
+  date: string;
+  total_volume: number;
+}
+
+export interface LoggedExercise {
+  id: number;
+  name: string;
+  muscle_group_name: string;
+}
