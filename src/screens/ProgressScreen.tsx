@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
+import { LineChart, BarChart } from 'react-native-gifted-charts';
 import {
   LoggedExercise,
   ExerciseProgressPoint,
@@ -93,6 +94,38 @@ export default function ProgressScreen() {
     setSelectedExerciseId(id);
     setSelectorOpen(false);
   };
+
+  // Chart data transformations
+  const weightChartData = useMemo(() => {
+    if (progressData.length < 2) return [];
+    const step = progressData.length > 20 ? 5 : progressData.length > 10 ? 3 : 1;
+    return progressData.map((p, i) => ({
+      value: p.max_weight,
+      label: i % step === 0
+        ? new Date(p.date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+        : '',
+      dataPointText: undefined as string | undefined,
+    }));
+  }, [progressData]);
+
+  const volumeChartData = useMemo(() => {
+    if (volumeData.length < 2) return [];
+    const step = volumeData.length > 20 ? 5 : volumeData.length > 10 ? 3 : 1;
+    return volumeData.map((v, i) => ({
+      value: v.total_volume,
+      label: i % step === 0
+        ? new Date(v.date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+        : '',
+    }));
+  }, [volumeData]);
+
+  const chartSpacing = useMemo(() => {
+    const dataLen = chartType === 'weight' ? weightChartData.length : volumeChartData.length;
+    if (dataLen <= 2) return 100;
+    if (dataLen <= 5) return 60;
+    if (dataLen <= 10) return 40;
+    return 28;
+  }, [chartType, weightChartData.length, volumeChartData.length]);
 
   // Empty state: no logged exercises
   if (exercises.length === 0) {
@@ -186,7 +219,7 @@ export default function ProgressScreen() {
           </Pressable>
         </View>
 
-        {/* Chart Area — placeholder for Task 3 */}
+        {/* Chart Area */}
         <View style={styles.chartCard}>
           <Text style={styles.chartLabel}>
             {chartType === 'weight' ? 'Max Weight (lbs)' : 'Total Volume (lbs)'}
@@ -205,10 +238,59 @@ export default function ProgressScreen() {
               </Text>
               <Text style={styles.noDataText}>Log more sessions to see trends</Text>
             </View>
+          ) : chartType === 'weight' ? (
+            <LineChart
+              data={weightChartData}
+              color="#007AFF"
+              dataPointsColor="#007AFF"
+              thickness={2}
+              dataPointsRadius={4}
+              spacing={chartSpacing}
+              adjustToWidth={weightChartData.length <= 10}
+              yAxisLabelWidth={50}
+              yAxisTextStyle={{ fontSize: 11, color: '#8E8E93' }}
+              xAxisLabelTextStyle={{ fontSize: 11, color: '#8E8E93' }}
+              areaChart
+              startFillColor="rgba(0,122,255,0.15)"
+              endFillColor="rgba(0,122,255,0.01)"
+              startOpacity={0.3}
+              endOpacity={0}
+              overflowTop={30}
+              pointerConfig={{
+                pointerStripColor: '#007AFF',
+                pointerStripWidth: 1,
+                pointerColor: '#007AFF',
+                radius: 5,
+                pointerLabelWidth: 80,
+                pointerLabelHeight: 30,
+                pointerLabelComponent: (items: { value: number }[]) => (
+                  <View style={styles.tooltipContainer}>
+                    <Text style={styles.tooltipText}>{items[0].value} lbs</Text>
+                  </View>
+                ),
+              }}
+              isAnimated
+              animationDuration={600}
+            />
           ) : (
-            <View style={styles.chartPlaceholder}>
-              <Text style={styles.chartPlaceholderText}>Chart goes here</Text>
-            </View>
+            <BarChart
+              data={volumeChartData}
+              frontColor="#34C759"
+              barWidth={20}
+              barBorderRadius={4}
+              spacing={chartSpacing}
+              adjustToWidth={volumeChartData.length <= 10}
+              yAxisLabelWidth={60}
+              yAxisTextStyle={{ fontSize: 11, color: '#8E8E93' }}
+              xAxisLabelTextStyle={{ fontSize: 11, color: '#8E8E93' }}
+              renderTooltip={(item: { value: number }) => (
+                <View style={styles.tooltipContainer}>
+                  <Text style={styles.tooltipText}>{Math.round(item.value)} lbs</Text>
+                </View>
+              )}
+              isAnimated
+              animationDuration={600}
+            />
           )}
         </View>
 
@@ -374,14 +456,20 @@ const styles = StyleSheet.create({
     color: '#8E8E93',
     marginBottom: 12,
   },
-  chartPlaceholder: {
-    height: 200,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   chartPlaceholderText: {
     fontSize: 15,
     color: '#C7C7CC',
+  },
+  tooltipContainer: {
+    backgroundColor: '#333',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+  tooltipText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#fff',
   },
   noDataContainer: {
     height: 200,
