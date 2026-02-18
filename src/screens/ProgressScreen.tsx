@@ -35,6 +35,18 @@ const TIME_RANGES: { label: string; value: TimeRange }[] = [
   { label: 'All', value: 'ALL' },
 ];
 
+function formatRecordDate(dateStr: string): string {
+  const date = new Date(dateStr + 'T00:00:00');
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+function formatVolume(volume: number): string {
+  if (volume >= 10000) {
+    return `${(volume / 1000).toFixed(1).replace(/\.0$/, '')}k`;
+  }
+  return volume.toLocaleString();
+}
+
 function getDateFrom(range: TimeRange): string | undefined {
   if (range === 'ALL') return undefined;
   const now = new Date();
@@ -294,12 +306,39 @@ export default function ProgressScreen() {
           )}
         </View>
 
-        {/* Personal Records — placeholder for Task 4 */}
+        {/* Personal Records */}
         {(personalRecords.maxWeight || personalRecords.maxVolume) && (
           <View style={styles.prSection}>
             <Text style={styles.prSectionTitle}>Personal Records</Text>
-            <View style={styles.prPlaceholder}>
-              <Text style={styles.chartPlaceholderText}>PR card goes here</Text>
+            <View style={styles.prCard}>
+              {personalRecords.maxWeight && (
+                <View style={styles.prRow}>
+                  <Ionicons name="trophy" size={24} color="#FF9500" />
+                  <View style={styles.prInfo}>
+                    <Text style={styles.prLabel}>Max Weight</Text>
+                    <Text style={styles.prValue}>
+                      {personalRecords.maxWeight.weight} lbs
+                      <Text style={styles.prReps}> x {personalRecords.maxWeight.reps} reps</Text>
+                    </Text>
+                    <Text style={styles.prDate}>{formatRecordDate(personalRecords.maxWeight.date)}</Text>
+                  </View>
+                </View>
+              )}
+              {personalRecords.maxWeight && personalRecords.maxVolume && (
+                <View style={styles.prDivider} />
+              )}
+              {personalRecords.maxVolume && (
+                <View style={styles.prRow}>
+                  <Ionicons name="flame" size={24} color="#34C759" />
+                  <View style={styles.prInfo}>
+                    <Text style={styles.prLabel}>Best Volume</Text>
+                    <Text style={styles.prValue}>
+                      {formatVolume(personalRecords.maxVolume.total_volume)} lbs
+                    </Text>
+                    <Text style={styles.prDate}>{formatRecordDate(personalRecords.maxVolume.date)}</Text>
+                  </View>
+                </View>
+              )}
             </View>
           </View>
         )}
@@ -456,10 +495,6 @@ const styles = StyleSheet.create({
     color: '#8E8E93',
     marginBottom: 12,
   },
-  chartPlaceholderText: {
-    fontSize: 15,
-    color: '#C7C7CC',
-  },
   tooltipContainer: {
     backgroundColor: '#333',
     paddingHorizontal: 8,
@@ -496,15 +531,45 @@ const styles = StyleSheet.create({
     color: '#000',
     marginBottom: 8,
   },
-  prPlaceholder: {
+  prCard: {
     backgroundColor: '#fff',
     borderRadius: 12,
     padding: 16,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: '#C6C6C8',
-    height: 100,
+  },
+  prRow: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    gap: 12,
+  },
+  prInfo: {
+    flex: 1,
+  },
+  prLabel: {
+    fontSize: 13,
+    color: '#8E8E93',
+  },
+  prValue: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#000',
+    marginTop: 2,
+  },
+  prReps: {
+    fontSize: 15,
+    fontWeight: '400',
+    color: '#8E8E93',
+  },
+  prDate: {
+    fontSize: 13,
+    color: '#8E8E93',
+    marginTop: 2,
+  },
+  prDivider: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: '#E5E5EA',
+    marginVertical: 12,
   },
   // Empty state
   emptyState: {
