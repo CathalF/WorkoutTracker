@@ -38,7 +38,7 @@ Ship a local-first mobile app that replaces the notes-app workflow with structur
 - Delete/edit past workouts
 - **Research needed:** No
 
-### Phase 5: Progress Charts
+### Phase 5: Progress Charts *(1 plan — 05-01 completed)*
 **Goal:** Users can see strength and volume trends per exercise over time.
 - Per-exercise progress chart (weight over time, volume over time)
 - Exercise selector for chart view
@@ -55,4 +55,4 @@ Ship a local-first mobile app that replaces the notes-app workflow with structur
 - **Research needed:** No
 
 ---
-*Last updated: 2026-02-16 — Phase 4 completed*
+*Last updated: 2026-02-18 — Phase 5 completed*
