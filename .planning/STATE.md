@@ -23,6 +23,7 @@ Phase 11: Home Screen Widget & Quick Actions
 | 9 | 09-01 | completed |
 | 10 | 10-01 | completed |
 | 11 | 11-01 | completed |
+| 11 | 11-01-FIX | completed |
 
 ## Active Issues
 None
@@ -53,6 +54,8 @@ None
 | expo-quick-actions for shortcuts | 2026-02-28 | Cross-platform app icon shortcuts; expo-quick-actions by Evan Bacon, works with SDK 54 |
 | react-native-android-widget for widget | 2026-02-28 | Android widget via config plugin; headless JS handler queries expo-sqlite directly using existing service functions |
 | SQLite in widget headless context | 2026-02-28 | getDatabase() lazy-opens DB with idempotent schema init — safe in headless JS task for widget rendering |
+| Minimal param forwarding from ExercisePicker | 2026-02-28 | ExercisePicker passes only selectedExercise when navigating back; React Navigation merges with existing ActiveWorkout params |
+| First set is always a PR | 2026-02-28 | checkForWeightPR/checkForRepsPR return true when no prior data exists — first set for any exercise is a personal record |
 
 ---
-*Last updated: 2026-02-28 — Phase 11 plan 11-01 completed, v2.0 milestone finished*
+*Last updated: 2026-02-28 — Phase 11 plan 11-01-FIX completed, 3 UAT issues resolved*
