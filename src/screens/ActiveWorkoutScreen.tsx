@@ -16,7 +16,7 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useKeepAwake } from 'expo-keep-awake';
 import * as Haptics from 'expo-haptics';
 import { WorkoutStackParamList } from '../navigation/WorkoutStackNavigator';
-import { createWorkout, addSet, getExerciseMuscleGroupId, createTemplate, getLastPerformance, getExerciseRestTime, setExerciseRestTime, clearExerciseRestTime, DEFAULT_REST_SECONDS } from '../database/services';
+import { createWorkout, addSet, getExerciseMuscleGroupId, createTemplate, getLastPerformance, getExerciseRestTime, setExerciseRestTime, clearExerciseRestTime, DEFAULT_REST_SECONDS, checkForWeightPR, checkForRepsPR, savePR } from '../database/services';
 import { LastPerformanceSet } from '../types';
 import { useTheme, ThemeColors } from '../theme';
 import useRestTimer from '../hooks/useRestTimer';
@@ -69,6 +69,16 @@ export default function ActiveWorkoutScreen({ navigation, route }: Props) {
   const [restTimeModalExercise, setRestTimeModalExercise] = useState<{ index: number; id: number; name: string } | null>(null);
   const [restTimeModalValue, setRestTimeModalValue] = useState(DEFAULT_REST_SECONDS);
 
+  // PR detection state
+  const [prModalData, setPrModalData] = useState<{
+    exerciseName: string;
+    prType: 'weight' | 'reps';
+    weight: number;
+    reps: number;
+  } | null>(null);
+  const [sessionPRKeys, setSessionPRKeys] = useState<Set<string>>(new Set());
+  const prIconScale = useRef(new Animated.Value(0)).current;
+
   // Timer bar animation
   const timerSlideAnim = useRef(new Animated.Value(100)).current;
 
@@ -111,6 +121,29 @@ export default function ActiveWorkoutScreen({ navigation, route }: Props) {
       }
     };
   }, []);
+
+  // PR trophy icon animation
+  useEffect(() => {
+    if (prModalData) {
+      prIconScale.setValue(0);
+      Animated.sequence([
+        Animated.spring(prIconScale, {
+          toValue: 1.2,
+          useNativeDriver: true,
+          tension: 100,
+          friction: 6,
+        }),
+        Animated.spring(prIconScale, {
+          toValue: 1.0,
+          useNativeDriver: true,
+          tension: 80,
+          friction: 8,
+        }),
+      ]).start();
+    } else {
+      prIconScale.setValue(0);
+    }
+  }, [prModalData, prIconScale]);
 
   // Initialize from template on mount
   useEffect(() => {
@@ -323,6 +356,26 @@ export default function ActiveWorkoutScreen({ navigation, route }: Props) {
     }
 
     setCompletedSets((prev) => new Set(prev).add(key));
+
+    // PR detection
+    const exerciseId = exercises[exIdx].exerciseId;
+    const exerciseName = exercises[exIdx].exerciseName;
+    const today = new Date().toISOString().split('T')[0];
+
+    const weightPRKey = `${exerciseId}-weight`;
+    const repsPRKey = `${exerciseId}-reps-${w}`;
+
+    if (!sessionPRKeys.has(weightPRKey) && checkForWeightPR(exerciseId, w, r)) {
+      savePR(exerciseId, 'weight', w, r, today);
+      setSessionPRKeys((prev) => new Set(prev).add(weightPRKey));
+      setPrModalData({ exerciseName, prType: 'weight', weight: w, reps: r });
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    } else if (!sessionPRKeys.has(repsPRKey) && checkForRepsPR(exerciseId, w, r)) {
+      savePR(exerciseId, 'reps', w, r, today);
+      setSessionPRKeys((prev) => new Set(prev).add(repsPRKey));
+      setPrModalData({ exerciseName, prType: 'reps', weight: w, reps: r });
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    }
 
     // Start rest timer
     const restSeconds = restTimes.get(exercises[exIdx].exerciseId) ?? DEFAULT_REST_SECONDS;
@@ -867,6 +920,38 @@ export default function ActiveWorkoutScreen({ navigation, route }: Props) {
           </Pressable>
         </Pressable>
       </Modal>
+
+      {/* PR Celebration Modal */}
+      <Modal
+        visible={prModalData !== null}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setPrModalData(null)}
+      >
+        <Pressable style={styles.modalOverlay} onPress={() => setPrModalData(null)}>
+          <Pressable style={styles.prModalContent} onPress={() => {}}>
+            <Animated.View style={[staticStyles.prIconContainer, { backgroundColor: colors.warning + '15', transform: [{ scale: prIconScale }] }]}>
+              <Ionicons name="trophy" size={56} color={colors.warning} />
+            </Animated.View>
+
+            <Text style={styles.prTitle}>New Personal Record!</Text>
+            <Text style={styles.prExerciseName}>{prModalData?.exerciseName}</Text>
+
+            <View style={styles.prValueCard}>
+              <Text style={styles.prValue}>
+                {prModalData?.weight} lbs × {prModalData?.reps} reps
+              </Text>
+              <Text style={styles.prTypeLabel}>
+                {prModalData?.prType === 'weight' ? 'Weight PR' : 'Rep PR'}
+              </Text>
+            </View>
+
+            <Pressable style={styles.prDismissButton} onPress={() => setPrModalData(null)}>
+              <Text style={staticStyles.prDismissText}>Keep Going!</Text>
+            </Pressable>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </View>
   );
 }
@@ -998,6 +1083,19 @@ const staticStyles = StyleSheet.create({
     justifyContent: 'center',
     gap: 12,
     marginBottom: 12,
+  },
+  prIconContainer: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 20,
+  },
+  prDismissText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#fff',
   },
 });
 
@@ -1342,5 +1440,51 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   },
   modalSaveButton: {
     backgroundColor: colors.primary,
+  },
+  // PR modal styles
+  prModalContent: {
+    backgroundColor: colors.surface,
+    borderRadius: 14,
+    padding: 32,
+    width: '100%',
+    maxWidth: 340,
+    alignItems: 'center',
+  },
+  prTitle: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: colors.text,
+    marginBottom: 4,
+  },
+  prExerciseName: {
+    fontSize: 17,
+    color: colors.textSecondary,
+    marginBottom: 20,
+  },
+  prValueCard: {
+    width: '100%',
+    backgroundColor: colors.background,
+    borderRadius: 12,
+    padding: 16,
+    alignItems: 'center',
+  },
+  prValue: {
+    fontSize: 28,
+    fontWeight: '700',
+    color: colors.text,
+  },
+  prTypeLabel: {
+    fontSize: 13,
+    color: colors.warning,
+    fontWeight: '600',
+    marginTop: 4,
+  },
+  prDismissButton: {
+    width: '100%',
+    backgroundColor: colors.primary,
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: 'center',
+    marginTop: 24,
   },
 });
