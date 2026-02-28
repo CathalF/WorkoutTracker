@@ -2,7 +2,7 @@
 
 ## Current Milestone
 v3.0 — Quality of Life & Visual Refresh (phases 12-17)
-Next phase to plan: 13 — Glassmorphic Design System
+Next phase to plan: 14 — Glassmorphic UI — Core Screens
 
 ## Completed Milestones
 | Version | Name | Phases | Archive |
@@ -41,6 +41,9 @@ None
 | SQLite in widget headless context | 2026-02-28 | getDatabase() lazy-opens DB with idempotent schema init — safe in headless JS task for widget rendering |
 | Minimal param forwarding from ExercisePicker | 2026-02-28 | ExercisePicker passes only selectedExercise when navigating back; React Navigation merges with existing ActiveWorkout params |
 | First set is always a PR | 2026-02-28 | checkForWeightPR/checkForRepsPR return true when no prior data exists — first set for any exercise is a personal record |
+| expo-blur for glass effects | 2026-02-28 | BlurView from expo-blur is the core building block for frosted glass surfaces |
+| Theme mode persistence via settings | 2026-02-28 | User's theme preference (system/light/dark) stored in settings table under key 'theme_mode' |
+| Monochrome + electric blue accent | 2026-02-28 | Glass surfaces are neutral grayscale; electric blue reserved for interactive elements only |
 
 ---
-*Last updated: 2026-02-28 — phase 12 completed (14 tasks, 14 commits)*
+*Last updated: 2026-02-28 — phase 13 plan 01 completed (10 tasks, 10 commits)*
