@@ -14,10 +14,20 @@ import {
 } from '@react-navigation/native';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
+import * as Notifications from 'expo-notifications';
 import AppNavigator from './src/navigation/AppNavigator';
 import { initializeDatabase } from './src/database';
 import { ThemeProvider, useTheme } from './src/theme';
 import ErrorBoundary from './src/components/ErrorBoundary';
+
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldPlaySound: true,
+    shouldSetBadge: false,
+    shouldShowBanner: true,
+    shouldShowList: true,
+  }),
+});
 
 function AppContent() {
   const colors = useTheme();
@@ -53,11 +63,19 @@ export default function App() {
     try {
       initializeDatabase();
       setIsReady(true);
+      requestNotificationPermissions();
     } catch (error) {
       console.error('Failed to initialize database:', error);
       setInitError(true);
     }
   };
+
+  async function requestNotificationPermissions() {
+    const { status } = await Notifications.getPermissionsAsync();
+    if (status !== 'granted') {
+      await Notifications.requestPermissionsAsync();
+    }
+  }
 
   useEffect(() => {
     attemptInit();

@@ -91,4 +91,11 @@ function initializeSchema(database: SQLiteDatabase): void {
       FOREIGN KEY (exercise_id) REFERENCES exercises(id)
     );
   `);
+
+  // Migration: add rest time column to exercises
+  try {
+    database.execSync(`ALTER TABLE exercises ADD COLUMN default_rest_seconds INTEGER`);
+  } catch {
+    // Column already exists — ignore
+  }
 }

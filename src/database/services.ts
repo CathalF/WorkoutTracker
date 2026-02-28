@@ -441,6 +441,29 @@ export function updateTemplateExerciseDefaultSets(templateExerciseId: number, de
   db.runSync('UPDATE template_exercises SET default_sets = ? WHERE id = ?', defaultSets, templateExerciseId);
 }
 
+// --- Rest time settings ---
+
+export const DEFAULT_REST_SECONDS = 90;
+
+export function getExerciseRestTime(exerciseId: number): number {
+  const db = getDatabase();
+  const row = db.getFirstSync<{ default_rest_seconds: number | null }>(
+    'SELECT default_rest_seconds FROM exercises WHERE id = ?',
+    exerciseId
+  );
+  return row?.default_rest_seconds ?? DEFAULT_REST_SECONDS;
+}
+
+export function setExerciseRestTime(exerciseId: number, seconds: number): void {
+  const db = getDatabase();
+  db.runSync('UPDATE exercises SET default_rest_seconds = ? WHERE id = ?', seconds, exerciseId);
+}
+
+export function clearExerciseRestTime(exerciseId: number): void {
+  const db = getDatabase();
+  db.runSync('UPDATE exercises SET default_rest_seconds = NULL WHERE id = ?', exerciseId);
+}
+
 // --- Previous performance ---
 
 export function getLastPerformance(exerciseId: number): LastPerformanceSet[] {
