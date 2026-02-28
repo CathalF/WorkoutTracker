@@ -7,6 +7,7 @@ import {
   View,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { BlurView } from 'expo-blur';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { RecentPR, MonthlyStats } from '../types';
 import {
@@ -16,7 +17,8 @@ import {
   getRecentPRs,
   getSetting,
 } from '../database/services';
-import { useTheme, ThemeColors } from '../theme';
+import { useThemeControl, ThemeColors } from '../theme';
+import { GradientBackground, GlassCard } from '../components/glass';
 
 function formatDate(dateStr: string): string {
   const date = new Date(dateStr + 'T00:00:00');
@@ -31,7 +33,7 @@ function formatVolume(volume: number): string {
 }
 
 export default function DashboardScreen() {
-  const colors = useTheme();
+  const { colors, isDark } = useThemeControl();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const navigation = useNavigation<any>();
 
@@ -102,8 +104,10 @@ export default function DashboardScreen() {
   }, []);
 
   return (
-    <View style={styles.container}>
+    <GradientBackground>
       <View style={styles.header}>
+        <BlurView intensity={80} tint={isDark ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
+        <View style={[StyleSheet.absoluteFill, { backgroundColor: colors.glassElevated }]} />
         <Text style={styles.headerTitle}>Dashboard</Text>
         <Pressable onPress={() => navigation.navigate('Settings')} hitSlop={8}>
           <Ionicons name="settings-outline" size={22} color={colors.textSecondary} />
@@ -125,7 +129,7 @@ export default function DashboardScreen() {
         ) : (
           <>
             {/* Weekly Overview */}
-            <View style={styles.weekContainer}>
+            <GlassCard style={staticStyles.weekCard}>
               <Text style={styles.sectionTitle}>This Week</Text>
               <View style={staticStyles.weekRow}>
                 {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((label, index) => {
@@ -147,24 +151,28 @@ export default function DashboardScreen() {
                   );
                 })}
               </View>
-            </View>
+            </GlassCard>
 
             {/* Stats Row */}
             <View style={staticStyles.statsRow}>
-              <View style={[styles.statCard, staticStyles.statCardHalf]}>
-                <Ionicons name="flame" size={24} color={colors.warning} />
-                <Text style={styles.statValue}>{streak}</Text>
-                <Text style={styles.statLabel}>week streak</Text>
-              </View>
-              <View style={[styles.statCard, staticStyles.statCardHalf]}>
-                <Ionicons name="barbell" size={24} color={colors.primary} />
-                <Text style={styles.statValue}>{monthlyStats.workoutCount}</Text>
-                <Text style={styles.statLabel}>workouts this month</Text>
-              </View>
+              <GlassCard style={staticStyles.statCardHalf}>
+                <View style={staticStyles.statCardContent}>
+                  <Ionicons name="flame" size={24} color={colors.warning} />
+                  <Text style={styles.statValue}>{streak}</Text>
+                  <Text style={styles.statLabel}>week streak</Text>
+                </View>
+              </GlassCard>
+              <GlassCard style={staticStyles.statCardHalf}>
+                <View style={staticStyles.statCardContent}>
+                  <Ionicons name="barbell" size={24} color={colors.primary} />
+                  <Text style={styles.statValue}>{monthlyStats.workoutCount}</Text>
+                  <Text style={styles.statLabel}>workouts this month</Text>
+                </View>
+              </GlassCard>
             </View>
 
             {/* Volume Card */}
-            <View style={styles.statCard}>
+            <GlassCard style={staticStyles.volumeCard}>
               <View style={staticStyles.volumeHeader}>
                 <Ionicons name="trending-up" size={20} color={colors.success} />
                 <Text style={styles.volumeLabel}>Volume This Month</Text>
@@ -172,7 +180,7 @@ export default function DashboardScreen() {
               <Text style={styles.volumeValue}>
                 {formatVolume(monthlyStats.totalVolume)} kg
               </Text>
-            </View>
+            </GlassCard>
 
             {/* Recent PRs */}
             <Text style={[styles.sectionTitle, staticStyles.prSectionTitle]}>Recent PRs</Text>
@@ -195,7 +203,7 @@ export default function DashboardScreen() {
           </>
         )}
       </ScrollView>
-    </View>
+    </GradientBackground>
   );
 }
 
@@ -205,13 +213,16 @@ const staticStyles = StyleSheet.create({
   },
   scrollContent: {
     padding: 16,
-    paddingBottom: 40,
+    paddingBottom: 100,
   },
   emptyState: {
     alignItems: 'center',
     justifyContent: 'center',
     paddingTop: 80,
     paddingHorizontal: 32,
+  },
+  weekCard: {
+    marginBottom: 12,
   },
   weekRow: {
     flexDirection: 'row',
@@ -231,6 +242,12 @@ const staticStyles = StyleSheet.create({
   statCardHalf: {
     flex: 1,
   },
+  statCardContent: {
+    alignItems: 'center',
+  },
+  volumeCard: {
+    marginBottom: 12,
+  },
   volumeHeader: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -247,10 +264,6 @@ const staticStyles = StyleSheet.create({
 });
 
 const createStyles = (colors: ThemeColors) => StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -258,9 +271,8 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     paddingTop: 56,
     paddingHorizontal: 16,
     paddingBottom: 12,
-    backgroundColor: colors.surface,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border,
+    borderBottomColor: colors.glassBorder,
   },
   headerTitle: {
     fontSize: 28,
@@ -279,15 +291,6 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     textAlign: 'center',
     marginTop: 8,
     lineHeight: 22,
-  },
-  // Weekly overview
-  weekContainer: {
-    backgroundColor: colors.surface,
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
   },
   sectionTitle: {
     fontSize: 17,
@@ -320,16 +323,6 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     color: colors.primary,
     fontWeight: '600',
   },
-  // Stats
-  statCard: {
-    backgroundColor: colors.surface,
-    borderRadius: 12,
-    padding: 16,
-    alignItems: 'center',
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
-    marginBottom: 12,
-  },
   statValue: {
     fontSize: 32,
     fontWeight: '700',
@@ -350,7 +343,6 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     fontWeight: '700',
     color: colors.text,
   },
-  // PRs
   emptyPRText: {
     fontSize: 14,
     color: colors.textSecondary,
@@ -361,10 +353,10 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     padding: 12,
-    backgroundColor: colors.surface,
+    backgroundColor: colors.glassSurface,
     borderRadius: 10,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
+    borderColor: colors.glassBorder,
     marginBottom: 8,
   },
   prName: {
