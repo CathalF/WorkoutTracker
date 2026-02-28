@@ -85,10 +85,9 @@ export default function TemplateManagementScreen({ navigation }: Props) {
   // --- Program CRUD ---
 
   const handleCreateProgram = () => {
-    renameTargetRef.current = null;
+    renameTargetRef.current = { type: 'program', id: -1 }; // -1 = new
     setRenameValue('');
     setRenameModalVisible(true);
-    renameTargetRef.current = { type: 'program', id: -1 }; // -1 = new
   };
 
   const handleRenameProgram = (program: Program) => {
