@@ -2,7 +2,7 @@
 
 ## Current Milestone
 v3.0 — Quality of Life & Visual Refresh (phases 12-17)
-Next phase to plan: 14 — Glassmorphic UI — Core Screens
+Next phase to plan: 15 — Glassmorphic UI — Secondary Screens
 
 ## Completed Milestones
 | Version | Name | Phases | Archive |
@@ -44,6 +44,9 @@ None
 | expo-blur for glass effects | 2026-02-28 | BlurView from expo-blur is the core building block for frosted glass surfaces |
 | Theme mode persistence via settings | 2026-02-28 | User's theme preference (system/light/dark) stored in settings table under key 'theme_mode' |
 | Monochrome + electric blue accent | 2026-02-28 | Glass surfaces are neutral grayscale; electric blue reserved for interactive elements only |
+| GlassCard for exercise blocks | 2026-02-28 | ActiveWorkoutScreen exercise blocks wrapped in GlassCard instead of styled View with surface/border |
+| GlassModal for all modals | 2026-02-28 | ActiveWorkoutScreen modals migrated from raw Modal+overlay to GlassModal component |
+| useThemeControl over useTheme | 2026-02-28 | Screens needing isDark (for BlurView tint) use useThemeControl() instead of useTheme() |
 
 ---
-*Last updated: 2026-02-28 — phase 13 plan 01 completed (10 tasks, 10 commits)*
+*Last updated: 2026-02-28 — phase 14 plan 01 completed (8 tasks, 7 commits)*
