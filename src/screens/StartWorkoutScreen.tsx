@@ -1,11 +1,17 @@
-import { useEffect, useMemo, useState } from 'react';
-import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useCallback, useMemo, useState } from 'react';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useNavigation } from '@react-navigation/native';
+import { useFocusEffect } from '@react-navigation/native';
 import { WorkoutStackParamList } from '../navigation/WorkoutStackNavigator';
-import { MuscleGroup } from '../types';
-import { getAllMuscleGroups } from '../database/services';
+import { MuscleGroup, WorkoutTemplate, Program } from '../types';
+import {
+  getAllMuscleGroups,
+  getAllTemplates,
+  getAllPrograms,
+  getTemplateWithExercises,
+} from '../database/services';
 import { useTheme, ThemeColors } from '../theme';
 
 type NavigationProp = NativeStackNavigationProp<WorkoutStackParamList, 'StartWorkout'>;
@@ -35,10 +41,16 @@ export default function StartWorkoutScreen() {
   const colors = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const [muscleGroups, setMuscleGroups] = useState<MuscleGroup[]>([]);
+  const [templates, setTemplates] = useState<WorkoutTemplate[]>([]);
+  const [programs, setPrograms] = useState<Program[]>([]);
 
-  useEffect(() => {
-    setMuscleGroups(getAllMuscleGroups());
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      setMuscleGroups(getAllMuscleGroups());
+      setTemplates(getAllTemplates());
+      setPrograms(getAllPrograms());
+    }, [])
+  );
 
   const handleSplitPress = (split: typeof WORKOUT_SPLITS[number]) => {
     const muscleGroupIds: number[] = [];
@@ -64,15 +76,60 @@ export default function StartWorkoutScreen() {
     });
   };
 
-  const renderSplitCard = ({ item }: { item: typeof WORKOUT_SPLITS[number] }) => (
-    <Pressable
-      style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
-      onPress={() => handleSplitPress(item)}
-    >
-      <Ionicons name={item.icon} size={32} color={colors.primary} />
-      <Text style={styles.cardLabel}>{item.label}</Text>
-    </Pressable>
-  );
+  const handleTemplatePress = (template: WorkoutTemplate) => {
+    const full = getTemplateWithExercises(template.id);
+    if (!full) return;
+
+    navigation.navigate('ActiveWorkout', {
+      workoutId: -1,
+      muscleGroupId: full.muscle_group_id,
+      splitLabel: full.split_label,
+      muscleGroupIds: full.muscle_group_ids,
+      fromTemplate: {
+        templateId: full.id,
+        exercises: full.exercises.map((e) => ({
+          exerciseId: e.exercise_id,
+          exerciseName: e.exercise_name,
+          defaultSets: e.default_sets,
+        })),
+      },
+    });
+  };
+
+  const getTemplateExerciseCount = (template: WorkoutTemplate): number => {
+    const full = getTemplateWithExercises(template.id);
+    return full?.exercises.length ?? 0;
+  };
+
+  // Group templates by program
+  const groupedTemplates = useMemo(() => {
+    if (programs.length === 0) return null;
+
+    const groups: { program: Program | null; templates: WorkoutTemplate[] }[] = [];
+
+    for (const program of programs) {
+      const programTemplates = templates.filter((t) => t.program_id === program.id);
+      if (programTemplates.length > 0) {
+        groups.push({ program, templates: programTemplates });
+      }
+    }
+
+    const unassigned = templates.filter((t) => t.program_id === null);
+    if (unassigned.length > 0) {
+      groups.push({ program: null, templates: unassigned });
+    }
+
+    return groups.length > 0 ? groups : null;
+  }, [templates, programs]);
+
+  // Build split rows for the 2-column grid
+  const splitRows = useMemo(() => {
+    const rows: (typeof WORKOUT_SPLITS[number])[][] = [];
+    for (let i = 0; i < WORKOUT_SPLITS.length; i += 2) {
+      rows.push(WORKOUT_SPLITS.slice(i, i + 2));
+    }
+    return rows;
+  }, []);
 
   return (
     <View style={styles.container}>
@@ -80,17 +137,73 @@ export default function StartWorkoutScreen() {
         <Text style={styles.title}>Start Workout</Text>
         <Text style={styles.subtitle}>{formatDate()}</Text>
       </View>
-      <FlatList
-        data={WORKOUT_SPLITS}
-        keyExtractor={(item) => item.label}
-        renderItem={renderSplitCard}
-        numColumns={2}
-        columnWrapperStyle={styles.row}
-        contentContainerStyle={styles.grid}
-        removeClippedSubviews={true}
-        maxToRenderPerBatch={15}
-        windowSize={5}
-      />
+
+      <ScrollView contentContainerStyle={styles.scrollContent}>
+        {templates.length > 0 && (
+          <>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>My Templates</Text>
+              <Pressable onPress={() => navigation.navigate('TemplateManagement')}>
+                <Text style={styles.manageLink}>Manage</Text>
+              </Pressable>
+            </View>
+
+            {groupedTemplates ? (
+              groupedTemplates.map((group) => (
+                <View key={group.program?.id ?? 'unassigned'}>
+                  <Text style={styles.programLabel}>
+                    {group.program?.name ?? 'Other'}
+                  </Text>
+                  {group.templates.map((template) => (
+                    <Pressable
+                      key={template.id}
+                      style={({ pressed }) => [styles.templateCard, pressed && styles.cardPressed]}
+                      onPress={() => handleTemplatePress(template)}
+                    >
+                      <Text style={styles.templateName}>{template.name}</Text>
+                      <Text style={styles.templateMeta}>
+                        {getTemplateExerciseCount(template)} exercises · {template.split_label}
+                      </Text>
+                    </Pressable>
+                  ))}
+                </View>
+              ))
+            ) : (
+              templates.map((template) => (
+                <Pressable
+                  key={template.id}
+                  style={({ pressed }) => [styles.templateCard, pressed && styles.cardPressed]}
+                  onPress={() => handleTemplatePress(template)}
+                >
+                  <Text style={styles.templateName}>{template.name}</Text>
+                  <Text style={styles.templateMeta}>
+                    {getTemplateExerciseCount(template)} exercises · {template.split_label}
+                  </Text>
+                </Pressable>
+              ))
+            )}
+
+            <View style={styles.divider} />
+            <Text style={styles.scratchLabel}>Or start from scratch</Text>
+          </>
+        )}
+
+        {splitRows.map((row, rowIdx) => (
+          <View key={rowIdx} style={styles.splitRow}>
+            {row.map((split) => (
+              <Pressable
+                key={split.label}
+                style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
+                onPress={() => handleSplitPress(split)}
+              >
+                <Ionicons name={split.icon} size={32} color={colors.primary} />
+                <Text style={styles.cardLabel}>{split.label}</Text>
+              </Pressable>
+            ))}
+            {row.length === 1 && <View style={styles.cardPlaceholder} />}
+          </View>
+        ))}
+      </ScrollView>
     </View>
   );
 }
@@ -116,10 +229,64 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     color: colors.textSecondary,
     marginTop: 4,
   },
-  grid: {
+  scrollContent: {
     padding: 16,
+    paddingBottom: 40,
   },
-  row: {
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+  },
+  sectionTitle: {
+    fontSize: 17,
+    fontWeight: '600',
+    color: colors.text,
+  },
+  manageLink: {
+    fontSize: 15,
+    fontWeight: '500',
+    color: colors.primary,
+  },
+  programLabel: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: colors.textSecondary,
+    marginBottom: 8,
+    marginTop: 4,
+  },
+  templateCard: {
+    backgroundColor: colors.surface,
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 10,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
+  },
+  templateName: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.text,
+  },
+  templateMeta: {
+    fontSize: 13,
+    color: colors.textSecondary,
+    marginTop: 4,
+  },
+  divider: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: colors.separator,
+    marginVertical: 20,
+  },
+  scratchLabel: {
+    fontSize: 15,
+    fontWeight: '500',
+    color: colors.textSecondary,
+    marginBottom: 12,
+  },
+  splitRow: {
+    flexDirection: 'row',
     justifyContent: 'space-between',
     marginBottom: 12,
   },
@@ -133,6 +300,10 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     marginHorizontal: 6,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: colors.border,
+  },
+  cardPlaceholder: {
+    flex: 1,
+    marginHorizontal: 6,
   },
   cardPressed: {
     backgroundColor: colors.pressed,
