@@ -180,23 +180,24 @@ export function getWorkouts(muscleGroupId?: number): WorkoutSummary[] {
       w.id,
       w.date,
       mg.name AS muscle_group_name,
-      (SELECT COUNT(DISTINCT s.exercise_id) FROM sets s WHERE s.workout_id = w.id) AS exercise_count,
-      (SELECT COUNT(*) FROM sets s WHERE s.workout_id = w.id) AS set_count,
-      (SELECT COALESCE(SUM(s.weight * s.reps), 0) FROM sets s WHERE s.workout_id = w.id) AS total_volume,
+      COUNT(DISTINCT s.exercise_id) AS exercise_count,
+      COUNT(s.id) AS set_count,
+      COALESCE(SUM(s.weight * s.reps), 0) AS total_volume,
       w.created_at
     FROM workouts w
     JOIN muscle_groups mg ON w.muscle_group_id = mg.id
+    LEFT JOIN sets s ON s.workout_id = w.id
   `;
 
   if (muscleGroupId !== undefined) {
     return db.getAllSync<WorkoutSummary>(
-      baseQuery + ' WHERE w.muscle_group_id = ? ORDER BY w.date DESC, w.created_at DESC',
+      baseQuery + ' WHERE w.muscle_group_id = ? GROUP BY w.id ORDER BY w.date DESC, w.created_at DESC',
       muscleGroupId
     );
   }
 
   return db.getAllSync<WorkoutSummary>(
-    baseQuery + ' ORDER BY w.date DESC, w.created_at DESC'
+    baseQuery + ' GROUP BY w.id ORDER BY w.date DESC, w.created_at DESC'
   );
 }
 
