@@ -13,13 +13,15 @@ import {
   View,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { BlurView } from 'expo-blur';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useKeepAwake } from 'expo-keep-awake';
 import * as Haptics from 'expo-haptics';
 import { WorkoutStackParamList } from '../navigation/WorkoutStackNavigator';
 import { createWorkout, addSet, getExerciseMuscleGroupId, createTemplate, getLastPerformance, getExerciseRestTime, setExerciseRestTime, clearExerciseRestTime, DEFAULT_REST_SECONDS, checkForWeightPR, checkForRepsPR, savePR } from '../database/services';
 import { LastPerformanceSet } from '../types';
-import { useTheme, ThemeColors } from '../theme';
+import { useThemeControl, ThemeColors } from '../theme';
+import { GradientBackground, GlassCard } from '../components/glass';
 import useRestTimer from '../hooks/useRestTimer';
 import { scheduleRestNotification, cancelRestNotification, handleWorkoutCompleted } from '../utils/notifications';
 import { refreshQuickActions } from '../utils/quickActions';
@@ -48,7 +50,7 @@ function formatTime(seconds: number): string {
 
 export default function ActiveWorkoutScreen({ navigation, route }: Props) {
   useKeepAwake();
-  const colors = useTheme();
+  const { colors, isDark } = useThemeControl();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const { muscleGroupId, splitLabel, muscleGroupIds } = route.params;
   const [exercises, setExercises] = useState<ActiveExercise[]>([]);
@@ -548,8 +550,10 @@ export default function ActiveWorkoutScreen({ navigation, route }: Props) {
   const timerProgress = totalDuration > 0 ? 1 - secondsRemaining / totalDuration : 0;
 
   return (
-    <View style={styles.container}>
+    <GradientBackground>
       <View style={styles.header}>
+        <BlurView intensity={80} tint={isDark ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
+        <View style={[StyleSheet.absoluteFill, { backgroundColor: colors.glassElevated }]} />
         <Pressable onPress={handleDiscard} style={staticStyles.headerSide}>
           <Ionicons name="close" size={26} color={colors.destructive} />
         </Pressable>
@@ -566,7 +570,7 @@ export default function ActiveWorkoutScreen({ navigation, route }: Props) {
         style={staticStyles.scrollView}
         contentContainerStyle={[
           staticStyles.scrollContent,
-          (isRunning || showRestComplete) && { paddingBottom: 120 },
+          (isRunning || showRestComplete) && { paddingBottom: 160 },
         ]}
         keyboardShouldPersistTaps="handled"
         onScrollBeginDrag={() => Keyboard.dismiss()}
@@ -586,7 +590,7 @@ export default function ActiveWorkoutScreen({ navigation, route }: Props) {
         ) : (
           <>
             {exercises.map((exercise, exIdx) => (
-              <View key={exercise.exerciseId} style={styles.exerciseCard}>
+              <GlassCard key={exercise.exerciseId} style={staticStyles.exerciseCardGlass}>
                 <View style={staticStyles.exerciseHeader}>
                   <View style={staticStyles.exerciseTitleRow}>
                     <Text style={styles.exerciseTitle}>{exercise.exerciseName}</Text>
@@ -759,7 +763,7 @@ export default function ActiveWorkoutScreen({ navigation, route }: Props) {
                   <Ionicons name="add" size={18} color={colors.primary} />
                   <Text style={styles.addSetText}>Add Set</Text>
                 </Pressable>
-              </View>
+              </GlassCard>
             ))}
 
             <Pressable style={styles.addExerciseButton} onPress={handleAddExercise}>
@@ -967,7 +971,7 @@ export default function ActiveWorkoutScreen({ navigation, route }: Props) {
           </Pressable>
         </Pressable>
       </Modal>
-    </View>
+    </GradientBackground>
   );
 }
 
@@ -988,12 +992,15 @@ const staticStyles = StyleSheet.create({
   },
   scrollContent: {
     padding: 16,
-    paddingBottom: 40,
+    paddingBottom: 100,
   },
   emptyState: {
     alignItems: 'center',
     justifyContent: 'center',
     paddingTop: 80,
+  },
+  exerciseCardGlass: {
+    marginBottom: 12,
   },
   emptyAddButtonText: {
     fontSize: 16,
@@ -1115,10 +1122,6 @@ const staticStyles = StyleSheet.create({
 });
 
 const createStyles = (colors: ThemeColors) => StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1126,9 +1129,8 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     paddingTop: 56,
     paddingHorizontal: 16,
     paddingBottom: 12,
-    backgroundColor: colors.surface,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border,
+    borderBottomColor: colors.glassBorder,
   },
   headerTitle: {
     fontSize: 18,
@@ -1166,14 +1168,6 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     marginTop: 24,
     gap: 8,
   },
-  exerciseCard: {
-    backgroundColor: colors.surface,
-    borderRadius: 12,
-    marginBottom: 12,
-    padding: 16,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
-  },
   exerciseTitle: {
     fontSize: 17,
     fontWeight: '600',
@@ -1200,7 +1194,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     textAlign: 'center',
   },
   completedSetRow: {
-    backgroundColor: colors.success + '10',
+    backgroundColor: colors.success + '15',
     borderRadius: 8,
     paddingVertical: 2,
     paddingHorizontal: 4,
