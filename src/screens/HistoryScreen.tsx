@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import {
   Pressable,
   ScrollView,
@@ -122,11 +122,6 @@ export default function HistoryScreen() {
   const handleFilterPress = (muscleGroupId: number | null) => {
     setSelectedFilterId(muscleGroupId);
   };
-
-  useEffect(() => {
-    const results = getWorkouts(selectedFilterId ?? undefined);
-    setWorkouts(results);
-  }, [selectedFilterId]);
 
   const handleRefresh = () => {
     setRefreshing(true);
