@@ -13,7 +13,8 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { WorkoutStackParamList } from '../navigation/WorkoutStackNavigator';
-import { createWorkout, addSet, getExerciseMuscleGroupId, createTemplate } from '../database/services';
+import { createWorkout, addSet, getExerciseMuscleGroupId, createTemplate, getLastPerformance } from '../database/services';
+import { LastPerformanceSet } from '../types';
 import { useTheme, ThemeColors } from '../theme';
 
 type Props = NativeStackScreenProps<WorkoutStackParamList, 'ActiveWorkout'>;
@@ -38,6 +39,32 @@ export default function ActiveWorkoutScreen({ navigation, route }: Props) {
   const [templateModalVisible, setTemplateModalVisible] = useState(false);
   const [templateName, setTemplateName] = useState('');
   const savedWorkoutIdRef = useRef<number | null>(null);
+  const [lastPerformance, setLastPerformance] = useState<Map<number, LastPerformanceSet[]>>(new Map());
+  const templateInitRef = useRef(false);
+
+  // Initialize from template on mount
+  useEffect(() => {
+    const fromTemplate = route.params.fromTemplate;
+    if (!fromTemplate || templateInitRef.current) return;
+    templateInitRef.current = true;
+
+    const initialExercises: ActiveExercise[] = fromTemplate.exercises.map((te) => ({
+      exerciseId: te.exerciseId,
+      exerciseName: te.exerciseName,
+      sets: Array.from({ length: Math.max(te.defaultSets, 1) }, () => ({ weight: '', reps: '' })),
+    }));
+    setExercises(initialExercises);
+
+    // Fetch previous performance for all template exercises
+    const perfMap = new Map<number, LastPerformanceSet[]>();
+    for (const te of fromTemplate.exercises) {
+      const perf = getLastPerformance(te.exerciseId);
+      if (perf.length > 0) {
+        perfMap.set(te.exerciseId, perf);
+      }
+    }
+    setLastPerformance(perfMap);
+  }, [route.params.fromTemplate]);
 
   // Detect new exercise selection from ExercisePicker
   useEffect(() => {
@@ -58,6 +85,12 @@ export default function ActiveWorkoutScreen({ navigation, route }: Props) {
         sets: [{ weight: '', reps: '' }],
       },
     ]);
+
+    // Fetch previous performance for newly added exercise
+    const perf = getLastPerformance(selected.id);
+    if (perf.length > 0) {
+      setLastPerformance((prev) => new Map(prev).set(selected.id, perf));
+    }
   }, [route.params.selectedExercise]);
 
   const handleAddExercise = () => {
@@ -292,67 +325,78 @@ export default function ActiveWorkoutScreen({ navigation, route }: Props) {
                   <View style={{ width: 28 }} />
                 </View>
 
-                {exercise.sets.map((set, setIdx) => (
-                  <View key={setIdx} style={staticStyles.setRow}>
-                    <Text style={styles.setNumber}>{setIdx + 1}</Text>
+                {exercise.sets.map((set, setIdx) => {
+                  const prevPerf = lastPerformance.get(exercise.exerciseId);
+                  const prevSet = prevPerf?.find((p) => p.set_number === setIdx + 1);
+                  return (
+                    <View key={setIdx}>
+                      <View style={staticStyles.setRow}>
+                        <Text style={styles.setNumber}>{setIdx + 1}</Text>
 
-                    <View style={staticStyles.inputGroup}>
-                      <Pressable
-                        style={styles.incrementButton}
-                        onPress={() => incrementWeight(exIdx, setIdx, -5)}
-                      >
-                        <Text style={styles.incrementText}>-</Text>
-                      </Pressable>
-                      <TextInput
-                        style={styles.weightInput}
-                        value={set.weight}
-                        onChangeText={(v) => updateSet(exIdx, setIdx, 'weight', v)}
-                        keyboardType="numeric"
-                        placeholder="0"
-                        placeholderTextColor={colors.textTertiary}
-                        selectTextOnFocus
-                      />
-                      <Pressable
-                        style={styles.incrementButton}
-                        onPress={() => incrementWeight(exIdx, setIdx, 5)}
-                      >
-                        <Text style={styles.incrementText}>+</Text>
-                      </Pressable>
+                        <View style={staticStyles.inputGroup}>
+                          <Pressable
+                            style={styles.incrementButton}
+                            onPress={() => incrementWeight(exIdx, setIdx, -5)}
+                          >
+                            <Text style={styles.incrementText}>-</Text>
+                          </Pressable>
+                          <TextInput
+                            style={styles.weightInput}
+                            value={set.weight}
+                            onChangeText={(v) => updateSet(exIdx, setIdx, 'weight', v)}
+                            keyboardType="numeric"
+                            placeholder="0"
+                            placeholderTextColor={colors.textTertiary}
+                            selectTextOnFocus
+                          />
+                          <Pressable
+                            style={styles.incrementButton}
+                            onPress={() => incrementWeight(exIdx, setIdx, 5)}
+                          >
+                            <Text style={styles.incrementText}>+</Text>
+                          </Pressable>
+                        </View>
+
+                        <View style={staticStyles.inputGroup}>
+                          <Pressable
+                            style={styles.incrementButton}
+                            onPress={() => incrementReps(exIdx, setIdx, -1)}
+                          >
+                            <Text style={styles.incrementText}>-</Text>
+                          </Pressable>
+                          <TextInput
+                            style={styles.repsInput}
+                            value={set.reps}
+                            onChangeText={(v) => updateSet(exIdx, setIdx, 'reps', v)}
+                            keyboardType="numeric"
+                            placeholder="0"
+                            placeholderTextColor={colors.textTertiary}
+                            selectTextOnFocus
+                          />
+                          <Pressable
+                            style={styles.incrementButton}
+                            onPress={() => incrementReps(exIdx, setIdx, 1)}
+                          >
+                            <Text style={styles.incrementText}>+</Text>
+                          </Pressable>
+                        </View>
+
+                        <Pressable
+                          onPress={() => removeSet(exIdx, setIdx)}
+                          hitSlop={8}
+                          style={staticStyles.deleteSetButton}
+                        >
+                          <Ionicons name="trash-outline" size={18} color={colors.destructive} />
+                        </Pressable>
+                      </View>
+                      {prevSet && (
+                        <Text style={styles.prevPerformance}>
+                          prev: {prevSet.weight} × {prevSet.reps}
+                        </Text>
+                      )}
                     </View>
-
-                    <View style={staticStyles.inputGroup}>
-                      <Pressable
-                        style={styles.incrementButton}
-                        onPress={() => incrementReps(exIdx, setIdx, -1)}
-                      >
-                        <Text style={styles.incrementText}>-</Text>
-                      </Pressable>
-                      <TextInput
-                        style={styles.repsInput}
-                        value={set.reps}
-                        onChangeText={(v) => updateSet(exIdx, setIdx, 'reps', v)}
-                        keyboardType="numeric"
-                        placeholder="0"
-                        placeholderTextColor={colors.textTertiary}
-                        selectTextOnFocus
-                      />
-                      <Pressable
-                        style={styles.incrementButton}
-                        onPress={() => incrementReps(exIdx, setIdx, 1)}
-                      >
-                        <Text style={styles.incrementText}>+</Text>
-                      </Pressable>
-                    </View>
-
-                    <Pressable
-                      onPress={() => removeSet(exIdx, setIdx)}
-                      hitSlop={8}
-                      style={staticStyles.deleteSetButton}
-                    >
-                      <Ionicons name="trash-outline" size={18} color={colors.destructive} />
-                    </Pressable>
-                  </View>
-                ))}
+                  );
+                })}
 
                 <Pressable
                   style={staticStyles.addSetButton}
@@ -613,6 +657,13 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     fontSize: 16,
     fontWeight: '500',
     color: colors.text,
+  },
+  prevPerformance: {
+    fontSize: 11,
+    color: colors.textTertiary,
+    textAlign: 'center',
+    marginBottom: 6,
+    marginTop: -4,
   },
   addSetText: {
     fontSize: 15,
