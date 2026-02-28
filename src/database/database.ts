@@ -112,6 +112,15 @@ function initializeSchema(database: SQLiteDatabase): void {
     );
   `);
 
+  // Indexes for query performance
+  database.execSync(`CREATE INDEX IF NOT EXISTS idx_sets_workout_id ON sets(workout_id);`);
+  database.execSync(`CREATE INDEX IF NOT EXISTS idx_sets_exercise_id ON sets(exercise_id);`);
+  database.execSync(`CREATE INDEX IF NOT EXISTS idx_workouts_date ON workouts(date);`);
+  database.execSync(`CREATE INDEX IF NOT EXISTS idx_workouts_muscle_group_id ON workouts(muscle_group_id);`);
+  database.execSync(`CREATE INDEX IF NOT EXISTS idx_personal_records_exercise_id ON personal_records(exercise_id);`);
+  database.execSync(`CREATE INDEX IF NOT EXISTS idx_personal_records_created_at ON personal_records(created_at);`);
+  database.execSync(`CREATE INDEX IF NOT EXISTS idx_template_exercises_template_id ON template_exercises(template_id);`);
+
   // Migration: add rest time column to exercises
   try {
     database.execSync(`ALTER TABLE exercises ADD COLUMN default_rest_seconds INTEGER`);
