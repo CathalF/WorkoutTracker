@@ -232,7 +232,7 @@ export default function ProgressScreen() {
         {/* Chart Area */}
         <View style={styles.chartCard}>
           <Text style={styles.chartLabel}>
-            {chartType === 'weight' ? 'Max Weight (lbs)' : 'Total Volume (lbs)'}
+            {chartType === 'weight' ? 'Max Weight (kg)' : 'Total Volume (kg)'}
           </Text>
           {currentData.length === 0 ? (
             <View style={staticStyles.noDataContainer}>

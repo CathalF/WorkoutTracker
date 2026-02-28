@@ -623,7 +623,7 @@ export default function ActiveWorkoutScreen({ navigation, route }: Props) {
                 <View style={staticStyles.setHeaderRow}>
                   <View style={{ width: 30 }} />
                   <Text style={styles.setHeaderLabel}>Set</Text>
-                  <Text style={styles.setHeaderLabel}>Weight (lb)</Text>
+                  <Text style={styles.setHeaderLabel}>Weight (kg)</Text>
                   <Text style={styles.setHeaderLabel}>Reps</Text>
                   <View style={{ width: 28 }} />
                 </View>
