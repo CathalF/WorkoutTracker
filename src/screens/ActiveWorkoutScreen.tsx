@@ -501,6 +501,10 @@ export default function ActiveWorkoutScreen({ navigation, route }: Props) {
     if (templateExercises.length === 0) return;
 
     const resolvedMgId = muscleGroupId || origMuscleGroupIdRef.current || getExerciseMuscleGroupId(exercises[0].exerciseId);
+    if (!resolvedMgId) {
+      Alert.alert('Error', 'Could not determine workout muscle group.');
+      return;
+    }
     const resolvedSplitLabel = splitLabel || origSplitLabelRef.current || 'Custom';
     const resolvedMgIds = muscleGroupIds?.length > 0 ? muscleGroupIds : origMuscleGroupIdsRef.current;
     createTemplate(name, resolvedMgId, resolvedSplitLabel, resolvedMgIds, templateExercises);
