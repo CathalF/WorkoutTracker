@@ -86,6 +86,8 @@ export default function WorkoutDetailScreen({ navigation, route }: Props) {
   useFocusEffect(
     useCallback(() => {
       loadData();
+      setEditingCell(null);
+      setEditValue('');
     }, [loadData])
   );
 
