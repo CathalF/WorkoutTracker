@@ -1,29 +1,13 @@
 # Project State
 
 ## Current Milestone
-v2.0 — UX & Engagement
+None — v2.0 completed, v3.0 not yet planned
 
-## Current Phase
-Phase 11: Home Screen Widget & Quick Actions
-
-## Phase Status
-| Phase | Name | Status |
-|-------|------|--------|
-| 7 | Workout Templates & Quick Start | completed |
-| 8 | Rest Timer & Active Workout UX | completed |
-| 9 | Streak Tracking & Motivation | completed |
-| 10 | Notifications & Reminders | completed |
-| 11 | Home Screen Widget & Quick Actions | completed |
-
-## Plan Status
-| Phase | Plan | Status |
-|-------|------|--------|
-| 7 | 07-01 | completed |
-| 8 | 08-01 | completed |
-| 9 | 09-01 | completed |
-| 10 | 10-01 | completed |
-| 11 | 11-01 | completed |
-| 11 | 11-01-FIX | completed |
+## Completed Milestones
+| Version | Name | Phases | Archive |
+|---------|------|--------|---------|
+| v1.0 | Core Workout Logging & Progress Tracking | 1-6 | [v1.0-ROADMAP.md](milestones/v1.0-ROADMAP.md) |
+| v2.0 | UX & Engagement | 7-11 | [v2.0-ROADMAP.md](milestones/v2.0-ROADMAP.md) |
 
 ## Active Issues
 None
@@ -58,4 +42,4 @@ None
 | First set is always a PR | 2026-02-28 | checkForWeightPR/checkForRepsPR return true when no prior data exists — first set for any exercise is a personal record |
 
 ---
-*Last updated: 2026-02-28 — Phase 11 plan 11-01-FIX completed, 3 UAT issues resolved*
+*Last updated: 2026-02-28 — v2.0 milestone archived*
