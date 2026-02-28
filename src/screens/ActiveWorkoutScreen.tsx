@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 import {
   Alert,
   Animated,
@@ -23,6 +24,7 @@ import useRestTimer from '../hooks/useRestTimer';
 import { scheduleRestNotification, cancelRestNotification, handleWorkoutCompleted } from '../utils/notifications';
 import { refreshQuickActions } from '../utils/quickActions';
 import { updateWidget } from '../utils/widgetBridge';
+import { consumePendingExercise } from '../utils/exerciseSelection';
 
 type Props = NativeStackScreenProps<WorkoutStackParamList, 'ActiveWorkout'>;
 
@@ -50,7 +52,6 @@ export default function ActiveWorkoutScreen({ navigation, route }: Props) {
   const styles = useMemo(() => createStyles(colors), [colors]);
   const { muscleGroupId, splitLabel, muscleGroupIds } = route.params;
   const [exercises, setExercises] = useState<ActiveExercise[]>([]);
-  const lastSelectedRef = useRef<string | null>(null);
   const origMuscleGroupIdRef = useRef(muscleGroupId);
   const origSplitLabelRef = useRef(splitLabel);
   const origMuscleGroupIdsRef = useRef(muscleGroupIds);
@@ -177,40 +178,37 @@ export default function ActiveWorkoutScreen({ navigation, route }: Props) {
     setRestTimes(rtMap);
   }, [route.params.fromTemplate]);
 
-  // Detect new exercise selection from ExercisePicker
-  useEffect(() => {
-    const selected = route.params.selectedExercise;
-    if (!selected) return;
+  // Detect new exercise selection from ExercisePicker (via shared ref + goBack)
+  useFocusEffect(
+    useCallback(() => {
+      const selected = consumePendingExercise();
+      if (!selected) return;
 
-    if (lastSelectedRef.current === `${selected.id}`) return;
+      setExercises((prev) => {
+        if (prev.some((e) => e.exerciseId === selected.id)) return prev;
+        return [
+          ...prev,
+          {
+            exerciseId: selected.id,
+            exerciseName: selected.name,
+            sets: [{ weight: '', reps: '' }],
+          },
+        ];
+      });
 
-    const alreadyExists = exercises.some((e) => e.exerciseId === selected.id);
-    if (alreadyExists) return;
-
-    lastSelectedRef.current = `${selected.id}`;
-    setExercises((prev) => [
-      ...prev,
-      {
-        exerciseId: selected.id,
-        exerciseName: selected.name,
-        sets: [{ weight: '', reps: '' }],
-      },
-    ]);
-
-    // Fetch previous performance and rest time for newly added exercise
-    const perf = getLastPerformance(selected.id);
-    if (perf.length > 0) {
-      setLastPerformance((prev) => new Map(prev).set(selected.id, perf));
-    }
-    setRestTimes((prev) => new Map(prev).set(selected.id, getExerciseRestTime(selected.id)));
-  }, [route.params.selectedExercise]);
+      // Fetch previous performance and rest time for newly added exercise
+      const perf = getLastPerformance(selected.id);
+      if (perf.length > 0) {
+        setLastPerformance((prev) => new Map(prev).set(selected.id, perf));
+      }
+      setRestTimes((prev) => new Map(prev).set(selected.id, getExerciseRestTime(selected.id)));
+    }, [])
+  );
 
   const handleAddExercise = () => {
     const alreadyAddedIds = exercises.map((e) => e.exerciseId);
     navigation.navigate('ExercisePicker', {
       workoutId: -1,
-      muscleGroupId: muscleGroupId || origMuscleGroupIdRef.current,
-      splitLabel: splitLabel || origSplitLabelRef.current,
       muscleGroupIds,
       alreadyAddedIds,
     });

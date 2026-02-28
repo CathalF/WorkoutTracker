@@ -18,6 +18,7 @@ import {
   searchExercises,
 } from '../database/services';
 import { useTheme, ThemeColors } from '../theme';
+import { setPendingExercise } from '../utils/exerciseSelection';
 
 type Props = NativeStackScreenProps<WorkoutStackParamList, 'ExercisePicker'>;
 
@@ -81,10 +82,8 @@ export default function ExercisePickerScreen({ navigation, route }: Props) {
 
   const selectExercise = (exerciseId: number, exerciseName: string) => {
     if (alreadyAddedSet.has(exerciseId)) return;
-    navigation.navigate('ActiveWorkout', {
-      ...route.params,
-      selectedExercise: { id: exerciseId, name: exerciseName },
-    } as any);
+    setPendingExercise({ id: exerciseId, name: exerciseName });
+    navigation.goBack();
   };
 
   const renderExerciseItem = (exercise: Exercise, isAdded: boolean) => (
