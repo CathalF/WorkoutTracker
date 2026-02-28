@@ -114,3 +114,26 @@ export interface LastPerformanceSet {
   weight: number;
   reps: number;
 }
+
+export interface DetectedPR {
+  exerciseId: number;
+  exerciseName: string;
+  prType: 'weight' | 'reps';
+  weight: number;
+  reps: number;
+  date: string;
+}
+
+export interface RecentPR {
+  id: number;
+  exercise_name: string;
+  pr_type: string;
+  weight: number;
+  reps: number;
+  date: string;
+}
+
+export interface MonthlyStats {
+  workoutCount: number;
+  totalVolume: number;
+}

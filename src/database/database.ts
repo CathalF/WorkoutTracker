@@ -92,6 +92,26 @@ function initializeSchema(database: SQLiteDatabase): void {
     );
   `);
 
+  database.execSync(`
+    CREATE TABLE IF NOT EXISTS personal_records (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      exercise_id INTEGER NOT NULL,
+      pr_type TEXT NOT NULL,
+      weight REAL NOT NULL,
+      reps INTEGER NOT NULL,
+      date TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      FOREIGN KEY (exercise_id) REFERENCES exercises(id)
+    );
+  `);
+
+  database.execSync(`
+    CREATE TABLE IF NOT EXISTS settings (
+      key TEXT PRIMARY KEY,
+      value TEXT NOT NULL
+    );
+  `);
+
   // Migration: add rest time column to exercises
   try {
     database.execSync(`ALTER TABLE exercises ADD COLUMN default_rest_seconds INTEGER`);

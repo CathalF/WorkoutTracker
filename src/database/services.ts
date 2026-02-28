@@ -16,6 +16,8 @@ import {
   TemplateExercise,
   TemplateWithExercises,
   LastPerformanceSet,
+  RecentPR,
+  MonthlyStats,
 } from '../types';
 
 export function getAllMuscleGroups(): MuscleGroup[] {
@@ -481,5 +483,152 @@ export function getLastPerformance(exerciseId: number): LastPerformanceSet[] {
      ORDER BY s.set_number`,
     exerciseId,
     exerciseId
+  );
+}
+
+// --- PR detection ---
+
+export function checkForWeightPR(exerciseId: number, weight: number, _reps: number): boolean {
+  const db = getDatabase();
+  const row = db.getFirstSync<{ max_weight: number | null }>(
+    'SELECT MAX(weight) as max_weight FROM sets WHERE exercise_id = ?',
+    exerciseId
+  );
+  if (row?.max_weight === null || row?.max_weight === undefined) return false;
+  return weight > row.max_weight;
+}
+
+export function checkForRepsPR(exerciseId: number, weight: number, reps: number): boolean {
+  const db = getDatabase();
+  const row = db.getFirstSync<{ max_reps: number | null }>(
+    'SELECT MAX(reps) as max_reps FROM sets WHERE exercise_id = ? AND weight >= ?',
+    exerciseId,
+    weight
+  );
+  if (row?.max_reps === null || row?.max_reps === undefined) return false;
+  return reps > row.max_reps;
+}
+
+export function savePR(exerciseId: number, prType: 'weight' | 'reps', weight: number, reps: number, date: string): void {
+  const db = getDatabase();
+  db.runSync(
+    'INSERT INTO personal_records (exercise_id, pr_type, weight, reps, date) VALUES (?, ?, ?, ?, ?)',
+    exerciseId,
+    prType,
+    weight,
+    reps,
+    date
+  );
+}
+
+export function getRecentPRs(limit: number = 5): RecentPR[] {
+  const db = getDatabase();
+  return db.getAllSync<RecentPR>(
+    `SELECT pr.id, e.name as exercise_name, pr.pr_type, pr.weight, pr.reps, pr.date
+     FROM personal_records pr
+     JOIN exercises e ON pr.exercise_id = e.id
+     ORDER BY pr.created_at DESC
+     LIMIT ?`,
+    limit
+  );
+}
+
+// --- Dashboard data ---
+
+export function getWorkoutDaysInRange(startDate: string, endDate: string): string[] {
+  const db = getDatabase();
+  const rows = db.getAllSync<{ date: string }>(
+    'SELECT DISTINCT date FROM workouts WHERE date >= ? AND date <= ? ORDER BY date',
+    startDate,
+    endDate
+  );
+  return rows.map((r) => r.date);
+}
+
+export function getWeeklyStreak(weeklyGoal: number): number {
+  const db = getDatabase();
+  let streak = 0;
+
+  // Start from the week before the current one (current week is incomplete)
+  const now = new Date();
+  // Find Monday of the current week
+  const dayOfWeek = now.getDay(); // 0=Sun, 1=Mon, ...
+  const mondayOffset = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+  const currentMonday = new Date(now);
+  currentMonday.setDate(now.getDate() - mondayOffset);
+  currentMonday.setHours(0, 0, 0, 0);
+
+  // Go to the previous week's Monday
+  const checkMonday = new Date(currentMonday);
+  checkMonday.setDate(checkMonday.getDate() - 7);
+
+  while (true) {
+    const weekStart = checkMonday.toISOString().split('T')[0];
+    const weekEndDate = new Date(checkMonday);
+    weekEndDate.setDate(weekEndDate.getDate() + 6);
+    const weekEnd = weekEndDate.toISOString().split('T')[0];
+
+    const row = db.getFirstSync<{ cnt: number }>(
+      'SELECT COUNT(DISTINCT date) as cnt FROM workouts WHERE date >= ? AND date <= ?',
+      weekStart,
+      weekEnd
+    );
+    const count = row?.cnt ?? 0;
+
+    if (count >= weeklyGoal) {
+      streak++;
+      checkMonday.setDate(checkMonday.getDate() - 7);
+    } else {
+      break;
+    }
+  }
+
+  return streak;
+}
+
+export function getMonthlyStats(year: number, month: number): MonthlyStats {
+  const db = getDatabase();
+  const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
+  const nextMonth = month === 12 ? 1 : month + 1;
+  const nextYear = month === 12 ? year + 1 : year;
+  const endDate = `${nextYear}-${String(nextMonth).padStart(2, '0')}-01`;
+
+  const countRow = db.getFirstSync<{ cnt: number }>(
+    'SELECT COUNT(*) as cnt FROM workouts WHERE date >= ? AND date < ?',
+    startDate,
+    endDate
+  );
+  const workoutCount = countRow?.cnt ?? 0;
+
+  const volumeRow = db.getFirstSync<{ total: number }>(
+    `SELECT COALESCE(SUM(s.weight * s.reps), 0) as total
+     FROM sets s
+     JOIN workouts w ON s.workout_id = w.id
+     WHERE w.date >= ? AND w.date < ?`,
+    startDate,
+    endDate
+  );
+  const totalVolume = volumeRow?.total ?? 0;
+
+  return { workoutCount, totalVolume };
+}
+
+// --- Settings ---
+
+export function getSetting(key: string, defaultValue: string): string {
+  const db = getDatabase();
+  const row = db.getFirstSync<{ value: string }>(
+    'SELECT value FROM settings WHERE key = ?',
+    key
+  );
+  return row?.value ?? defaultValue;
+}
+
+export function setSetting(key: string, value: string): void {
+  const db = getDatabase();
+  db.runSync(
+    'INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)',
+    key,
+    value
   );
 }
