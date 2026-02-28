@@ -14,7 +14,7 @@ Phase 6: Polish & Launch Prep
 | 3 | Workout Logging Flow | completed |
 | 4 | Workout History | completed |
 | 5 | Progress Charts | completed |
-| 6 | Polish & Launch Prep | not_started |
+| 6 | Polish & Launch Prep | completed |
 
 ## Plan Status
 | Phase | Plan | Status |
@@ -24,6 +24,7 @@ Phase 6: Polish & Launch Prep
 | 3 | 03-01: Workout Logging Flow | completed |
 | 4 | 04-01: Workout History | completed |
 | 5 | 05-01: Progress Charts | completed |
+| 6 | 06-01: Polish & Launch Prep | completed |
 
 ## Active Issues
 None
@@ -38,6 +39,7 @@ None
 | Exercise selection via nav params | 2026-02-16 | ExercisePicker passes selectedExercise back to ActiveWorkout via route params |
 | Delete icon over swipe-to-delete | 2026-02-16 | Used explicit delete icon on set rows instead of swipe gesture for simpler implementation |
 | react-native-gifted-charts | 2026-02-18 | Chosen for zero native modules, Expo Go compatible, built-in tooltips and area charts |
+| Static colors for ErrorBoundary | 2026-02-28 | ErrorBoundary uses hardcoded colors since it wraps ThemeProvider and cannot use useTheme() |
 
 ---
-*Last updated: 2026-02-18 — Phase 5 completed*
+*Last updated: 2026-02-28 — Phase 6 completed, v1.0 milestone complete*
