@@ -4,7 +4,6 @@ import {
   Animated,
   Keyboard,
   Modal,
-  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -21,9 +20,9 @@ import { createWorkout, addSet, getExerciseMuscleGroupId, createTemplate, getLas
 import { LastPerformanceSet } from '../types';
 import { useTheme, ThemeColors } from '../theme';
 import useRestTimer from '../hooks/useRestTimer';
-import { requestWidgetUpdate } from 'react-native-android-widget';
 import { scheduleRestNotification, cancelRestNotification, handleWorkoutCompleted } from '../utils/notifications';
 import { refreshQuickActions } from '../utils/quickActions';
+import { updateWidget } from '../utils/widgetBridge';
 
 type Props = NativeStackScreenProps<WorkoutStackParamList, 'ActiveWorkout'>;
 
@@ -52,6 +51,9 @@ export default function ActiveWorkoutScreen({ navigation, route }: Props) {
   const { muscleGroupId, splitLabel, muscleGroupIds } = route.params;
   const [exercises, setExercises] = useState<ActiveExercise[]>([]);
   const lastSelectedRef = useRef<string | null>(null);
+  const origMuscleGroupIdRef = useRef(muscleGroupId);
+  const origSplitLabelRef = useRef(splitLabel);
+  const origMuscleGroupIdsRef = useRef(muscleGroupIds);
   const [templateModalVisible, setTemplateModalVisible] = useState(false);
   const [templateName, setTemplateName] = useState('');
   const savedWorkoutIdRef = useRef<number | null>(null);
@@ -439,7 +441,7 @@ export default function ActiveWorkoutScreen({ navigation, route }: Props) {
 
     const today = new Date().toISOString().split('T')[0];
     const resolvedMuscleGroupId =
-      muscleGroupId || getExerciseMuscleGroupId(exercises[0].exerciseId);
+      muscleGroupId || origMuscleGroupIdRef.current || getExerciseMuscleGroupId(exercises[0].exerciseId);
     if (!resolvedMuscleGroupId) {
       Alert.alert('Error', 'Could not determine workout muscle group.');
       return;
@@ -466,9 +468,7 @@ export default function ActiveWorkoutScreen({ navigation, route }: Props) {
 
     savedWorkoutIdRef.current = workoutId;
     handleWorkoutCompleted();
-    if (Platform.OS === 'android') {
-      requestWidgetUpdate({ widgetName: 'WorkoutWidget' });
-    }
+    updateWidget();
     refreshQuickActions();
 
     Alert.alert('Workout Saved!', 'Great session!', [
@@ -500,7 +500,10 @@ export default function ActiveWorkoutScreen({ navigation, route }: Props) {
 
     if (templateExercises.length === 0) return;
 
-    createTemplate(name, muscleGroupId, splitLabel, muscleGroupIds, templateExercises);
+    const resolvedMgId = muscleGroupId || origMuscleGroupIdRef.current || getExerciseMuscleGroupId(exercises[0].exerciseId);
+    const resolvedSplitLabel = splitLabel || origSplitLabelRef.current || 'Custom';
+    const resolvedMgIds = muscleGroupIds?.length > 0 ? muscleGroupIds : origMuscleGroupIdsRef.current;
+    createTemplate(name, resolvedMgId, resolvedSplitLabel, resolvedMgIds, templateExercises);
 
     setTemplateModalVisible(false);
     Alert.alert('Template Saved!', `"${name}" is ready to use.`, [
