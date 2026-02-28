@@ -20,7 +20,7 @@ import { createWorkout, addSet, getExerciseMuscleGroupId, createTemplate, getLas
 import { LastPerformanceSet } from '../types';
 import { useTheme, ThemeColors } from '../theme';
 import useRestTimer from '../hooks/useRestTimer';
-import { scheduleRestNotification, cancelRestNotification } from '../utils/notifications';
+import { scheduleRestNotification, cancelRestNotification, handleWorkoutCompleted } from '../utils/notifications';
 
 type Props = NativeStackScreenProps<WorkoutStackParamList, 'ActiveWorkout'>;
 
@@ -462,6 +462,7 @@ export default function ActiveWorkoutScreen({ navigation, route }: Props) {
     }
 
     savedWorkoutIdRef.current = workoutId;
+    handleWorkoutCompleted();
 
     Alert.alert('Workout Saved!', 'Great session!', [
       {

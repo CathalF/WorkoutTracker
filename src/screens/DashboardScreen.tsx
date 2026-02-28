@@ -1,6 +1,5 @@
 import { useCallback, useMemo, useState } from 'react';
 import {
-  Modal,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -8,7 +7,7 @@ import {
   View,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { RecentPR, MonthlyStats } from '../types';
 import {
   getWorkoutDaysInRange,
@@ -16,7 +15,6 @@ import {
   getMonthlyStats,
   getRecentPRs,
   getSetting,
-  setSetting,
 } from '../database/services';
 import { useTheme, ThemeColors } from '../theme';
 
@@ -35,14 +33,13 @@ function formatVolume(volume: number): string {
 export default function DashboardScreen() {
   const colors = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
+  const navigation = useNavigation<any>();
 
   const [weekDays, setWeekDays] = useState<Set<number>>(new Set());
   const [streak, setStreak] = useState(0);
   const [monthlyStats, setMonthlyStats] = useState<MonthlyStats>({ workoutCount: 0, totalVolume: 0 });
   const [recentPRs, setRecentPRs] = useState<RecentPR[]>([]);
   const [weeklyGoal, setWeeklyGoal] = useState(3);
-  const [goalModalVisible, setGoalModalVisible] = useState(false);
-  const [pendingGoal, setPendingGoal] = useState(3);
   const [hasWorkouts, setHasWorkouts] = useState(true);
 
   const loadDashboardData = useCallback(() => {
@@ -104,23 +101,11 @@ export default function DashboardScreen() {
     return dow === 0 ? 6 : dow - 1;
   }, []);
 
-  const handleOpenGoalModal = () => {
-    setPendingGoal(weeklyGoal);
-    setGoalModalVisible(true);
-  };
-
-  const handleSaveGoal = () => {
-    setSetting('weekly_goal', pendingGoal.toString());
-    setWeeklyGoal(pendingGoal);
-    setStreak(getWeeklyStreak(pendingGoal));
-    setGoalModalVisible(false);
-  };
-
   return (
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Dashboard</Text>
-        <Pressable onPress={handleOpenGoalModal} hitSlop={8}>
+        <Pressable onPress={() => navigation.navigate('Settings')} hitSlop={8}>
           <Ionicons name="settings-outline" size={22} color={colors.textSecondary} />
         </Pressable>
       </View>
@@ -166,11 +151,11 @@ export default function DashboardScreen() {
 
             {/* Stats Row */}
             <View style={staticStyles.statsRow}>
-              <Pressable style={[styles.statCard, staticStyles.statCardHalf]} onPress={handleOpenGoalModal}>
+              <View style={[styles.statCard, staticStyles.statCardHalf]}>
                 <Ionicons name="flame" size={24} color={colors.warning} />
                 <Text style={styles.statValue}>{streak}</Text>
                 <Text style={styles.statLabel}>week streak</Text>
-              </Pressable>
+              </View>
               <View style={[styles.statCard, staticStyles.statCardHalf]}>
                 <Ionicons name="barbell" size={24} color={colors.primary} />
                 <Text style={styles.statValue}>{monthlyStats.workoutCount}</Text>
@@ -210,60 +195,6 @@ export default function DashboardScreen() {
           </>
         )}
       </ScrollView>
-
-      {/* Weekly Goal Modal */}
-      <Modal
-        visible={goalModalVisible}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setGoalModalVisible(false)}
-      >
-        <Pressable style={styles.modalOverlay} onPress={() => setGoalModalVisible(false)}>
-          <Pressable style={styles.modalContent} onPress={() => {}}>
-            <Text style={styles.modalTitle}>Weekly Workout Goal</Text>
-            <Text style={styles.goalSubtitle}>
-              How many workouts per week to maintain your streak?
-            </Text>
-
-            <View style={staticStyles.goalRow}>
-              {[2, 3, 4, 5, 6, 7].map((n) => (
-                <Pressable
-                  key={n}
-                  style={[
-                    styles.goalButton,
-                    pendingGoal === n && styles.goalButtonActive,
-                  ]}
-                  onPress={() => setPendingGoal(n)}
-                >
-                  <Text
-                    style={[
-                      styles.goalButtonText,
-                      pendingGoal === n && styles.goalButtonTextActive,
-                    ]}
-                  >
-                    {n}
-                  </Text>
-                </Pressable>
-              ))}
-            </View>
-
-            <View style={staticStyles.modalButtons}>
-              <Pressable
-                style={[styles.modalButton, styles.modalCancelButton]}
-                onPress={() => setGoalModalVisible(false)}
-              >
-                <Text style={styles.modalCancelText}>Cancel</Text>
-              </Pressable>
-              <Pressable
-                style={[styles.modalButton, styles.modalSaveButton]}
-                onPress={handleSaveGoal}
-              >
-                <Text style={staticStyles.modalSaveText}>Save</Text>
-              </Pressable>
-            </View>
-          </Pressable>
-        </Pressable>
-      </Modal>
     </View>
   );
 }
@@ -312,21 +243,6 @@ const staticStyles = StyleSheet.create({
   prInfo: {
     flex: 1,
     marginLeft: 10,
-  },
-  goalRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 10,
-    marginBottom: 20,
-  },
-  modalButtons: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  modalSaveText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#fff',
   },
 });
 
@@ -464,74 +380,5 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   prDate: {
     fontSize: 12,
     color: colors.textTertiary,
-  },
-  // Modal
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: colors.modalOverlay,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 32,
-  },
-  modalContent: {
-    backgroundColor: colors.surface,
-    borderRadius: 14,
-    padding: 24,
-    width: '100%',
-    maxWidth: 340,
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: colors.text,
-    textAlign: 'center',
-    marginBottom: 8,
-  },
-  goalSubtitle: {
-    fontSize: 14,
-    color: colors.textSecondary,
-    textAlign: 'center',
-    marginBottom: 20,
-  },
-  goalButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.background,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
-  },
-  goalButtonActive: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
-  },
-  goalButtonText: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: colors.text,
-  },
-  goalButtonTextActive: {
-    color: '#fff',
-  },
-  modalButton: {
-    flex: 1,
-    borderRadius: 10,
-    paddingVertical: 12,
-    alignItems: 'center',
-  },
-  modalCancelButton: {
-    backgroundColor: colors.background,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
-  },
-  modalCancelText: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: colors.text,
-  },
-  modalSaveButton: {
-    backgroundColor: colors.primary,
   },
 });

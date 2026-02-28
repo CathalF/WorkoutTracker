@@ -1,6 +1,6 @@
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
-import DashboardScreen from '../screens/DashboardScreen';
+import DashboardStackNavigator from './DashboardStackNavigator';
 import WorkoutStackNavigator from './WorkoutStackNavigator';
 import HistoryStackNavigator from './HistoryStackNavigator';
 import ProgressScreen from '../screens/ProgressScreen';
@@ -42,8 +42,8 @@ export default function AppNavigator() {
     >
       <Tab.Screen
         name="Dashboard"
-        component={DashboardScreen}
-        options={{ title: 'Dashboard' }}
+        component={DashboardStackNavigator}
+        options={{ title: 'Dashboard', headerShown: false }}
       />
       <Tab.Screen
         name="Log Workout"
