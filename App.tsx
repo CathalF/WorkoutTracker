@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
-  Platform,
   Pressable,
   StyleSheet,
   Text,
@@ -17,8 +16,6 @@ import {
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import * as Notifications from 'expo-notifications';
-import * as QuickActions from 'expo-quick-actions';
-import { requestWidgetUpdate } from 'react-native-android-widget';
 import AppNavigator from './src/navigation/AppNavigator';
 import { initializeDatabase } from './src/database';
 import { ThemeProvider, useTheme } from './src/theme';
@@ -26,6 +23,17 @@ import ErrorBoundary from './src/components/ErrorBoundary';
 import { setupNotificationChannels, syncNotificationSchedules } from './src/utils/notifications';
 import { refreshQuickActions } from './src/utils/quickActions';
 import { handleQuickAction } from './src/utils/quickActionHandler';
+import { updateWidget } from './src/utils/widgetBridge';
+
+// Safe import — expo-quick-actions native module may not be available in Expo Go
+let QuickActions: any = { useQuickActionCallback: (_cb: any) => {}, initial: null };
+try {
+  const mod = require('expo-quick-actions');
+  // Only use the real module if the native hook is available (requires dev build)
+  if (typeof mod.useQuickActionCallback === 'function') {
+    QuickActions = mod;
+  }
+} catch {}
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -58,7 +66,7 @@ function AppContent() {
   };
 
   // Handle quick actions when app is already running (warm start)
-  QuickActions.useQuickActionCallback((action) => {
+  QuickActions.useQuickActionCallback((action: any) => {
     handleQuickAction(action);
   });
 
@@ -104,9 +112,7 @@ export default function App() {
       requestNotificationPermissions();
       syncNotificationSchedules();
       refreshQuickActions();
-      if (Platform.OS === 'android') {
-        requestWidgetUpdate({ widgetName: 'WorkoutWidget' });
-      }
+      updateWidget();
     } catch (error) {
       console.error('Failed to initialize database:', error);
       setInitError(true);
