@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { BlurView } from 'expo-blur';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useNavigation } from '@react-navigation/native';
 import { useFocusEffect } from '@react-navigation/native';
@@ -13,7 +14,8 @@ import {
   getTemplateWithExercises,
   getTemplateExerciseCounts,
 } from '../database/services';
-import { useTheme, ThemeColors } from '../theme';
+import { useThemeControl, ThemeColors } from '../theme';
+import { GradientBackground } from '../components/glass';
 import { refreshQuickActions } from '../utils/quickActions';
 
 type NavigationProp = NativeStackNavigationProp<WorkoutStackParamList, 'StartWorkout'>;
@@ -40,7 +42,7 @@ function formatDate(): string {
 
 export default function StartWorkoutScreen() {
   const navigation = useNavigation<NavigationProp>();
-  const colors = useTheme();
+  const { colors, isDark } = useThemeControl();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const [muscleGroups, setMuscleGroups] = useState<MuscleGroup[]>([]);
   const [templates, setTemplates] = useState<WorkoutTemplate[]>([]);
@@ -136,8 +138,10 @@ export default function StartWorkoutScreen() {
   }, []);
 
   return (
-    <View style={styles.container}>
+    <GradientBackground>
       <View style={styles.header}>
+        <BlurView intensity={80} tint={isDark ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
+        <View style={[StyleSheet.absoluteFill, { backgroundColor: colors.glassElevated }]} />
         <Text style={styles.title}>Start Workout</Text>
         <Text style={styles.subtitle}>{formatDate()}</Text>
       </View>
@@ -208,20 +212,17 @@ export default function StartWorkoutScreen() {
           </View>
         ))}
       </ScrollView>
-    </View>
+    </GradientBackground>
   );
 }
 
 const createStyles = (colors: ThemeColors) => StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
   header: {
     paddingTop: 60,
     paddingHorizontal: 24,
     paddingBottom: 16,
-    backgroundColor: colors.surface,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.glassBorder,
   },
   title: {
     fontSize: 28,
@@ -235,7 +236,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   },
   scrollContent: {
     padding: 16,
-    paddingBottom: 40,
+    paddingBottom: 100,
   },
   sectionHeader: {
     flexDirection: 'row',
@@ -261,12 +262,12 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     marginTop: 4,
   },
   templateCard: {
-    backgroundColor: colors.surface,
+    backgroundColor: colors.glassSurface,
     borderRadius: 12,
     padding: 16,
     marginBottom: 10,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
+    borderColor: colors.glassBorder,
   },
   templateName: {
     fontSize: 16,
@@ -280,7 +281,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   },
   divider: {
     height: StyleSheet.hairlineWidth,
-    backgroundColor: colors.separator,
+    backgroundColor: colors.glassBorder,
     marginVertical: 20,
   },
   scratchLabel: {
@@ -296,21 +297,21 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   },
   card: {
     flex: 1,
-    backgroundColor: colors.surface,
+    backgroundColor: colors.glassSurface,
     borderRadius: 12,
     paddingVertical: 24,
     alignItems: 'center',
     justifyContent: 'center',
     marginHorizontal: 6,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
+    borderColor: colors.glassBorder,
   },
   cardPlaceholder: {
     flex: 1,
     marginHorizontal: 6,
   },
   cardPressed: {
-    backgroundColor: colors.pressed,
+    backgroundColor: colors.glassElevated,
   },
   cardLabel: {
     fontSize: 15,
