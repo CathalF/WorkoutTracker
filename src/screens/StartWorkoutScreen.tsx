@@ -11,6 +11,7 @@ import {
   getAllTemplates,
   getAllPrograms,
   getTemplateWithExercises,
+  getTemplateExerciseCounts,
 } from '../database/services';
 import { useTheme, ThemeColors } from '../theme';
 import { refreshQuickActions } from '../utils/quickActions';
@@ -44,12 +45,14 @@ export default function StartWorkoutScreen() {
   const [muscleGroups, setMuscleGroups] = useState<MuscleGroup[]>([]);
   const [templates, setTemplates] = useState<WorkoutTemplate[]>([]);
   const [programs, setPrograms] = useState<Program[]>([]);
+  const [exerciseCounts, setExerciseCounts] = useState<Map<number, number>>(new Map());
 
   useFocusEffect(
     useCallback(() => {
       setMuscleGroups(getAllMuscleGroups());
       setTemplates(getAllTemplates());
       setPrograms(getAllPrograms());
+      setExerciseCounts(getTemplateExerciseCounts());
       refreshQuickActions();
     }, [])
   );
@@ -99,8 +102,7 @@ export default function StartWorkoutScreen() {
   };
 
   const getTemplateExerciseCount = (template: WorkoutTemplate): number => {
-    const full = getTemplateWithExercises(template.id);
-    return full?.exercises.length ?? 0;
+    return exerciseCounts.get(template.id) ?? 0;
   };
 
   // Group templates by program

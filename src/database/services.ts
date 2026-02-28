@@ -372,6 +372,18 @@ export function getAllTemplates(): WorkoutTemplate[] {
   }));
 }
 
+export function getTemplateExerciseCounts(): Map<number, number> {
+  const db = getDatabase();
+  const rows = db.getAllSync<{ template_id: number; exercise_count: number }>(
+    'SELECT template_id, COUNT(*) AS exercise_count FROM template_exercises GROUP BY template_id'
+  );
+  const map = new Map<number, number>();
+  for (const row of rows) {
+    map.set(row.template_id, row.exercise_count);
+  }
+  return map;
+}
+
 export function getTemplateWithExercises(templateId: number): TemplateWithExercises | null {
   const db = getDatabase();
   const row = db.getFirstSync<Omit<WorkoutTemplate, 'muscle_group_ids'> & { muscle_group_ids: string }>(
