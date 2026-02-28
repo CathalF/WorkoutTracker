@@ -2,6 +2,7 @@
   "expo": {
     "name": "Workout Tracker",
     "slug": "workout-tracker",
+    "scheme": "workouttracker",
     "version": "1.0.0",
     "description": "Log workouts and track your strength progress",
     "orientation": "portrait",
@@ -31,7 +32,30 @@
     },
     "plugins": [
       "expo-sqlite",
-      ["expo-notifications", { "sounds": [] }]
+      [
+        "expo-notifications",
+        {
+          "sounds": []
+        }
+      ],
+      "expo-quick-actions",
+      [
+        "react-native-android-widget",
+        {
+          "widgets": [
+            {
+              "name": "WorkoutWidget",
+              "label": "Workout Tracker",
+              "description": "View your streak and recent workout",
+              "minWidth": "250dp",
+              "minHeight": "110dp",
+              "targetCellWidth": 4,
+              "targetCellHeight": 2,
+              "updatePeriodMillis": 1800000
+            }
+          ]
+        }
+      ]
     ]
   }
 }

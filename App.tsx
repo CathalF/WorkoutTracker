@@ -8,6 +8,7 @@ import {
   View,
 } from 'react-native';
 import {
+  createNavigationContainerRef,
   DarkTheme,
   DefaultTheme,
   NavigationContainer,
@@ -32,6 +33,8 @@ Notifications.setNotificationHandler({
 
 setupNotificationChannels();
 
+export const navigationRef = createNavigationContainerRef();
+
 function AppContent() {
   const colors = useTheme();
   const scheme = useColorScheme();
@@ -49,8 +52,22 @@ function AppContent() {
     },
   };
 
+  const linking = {
+    prefixes: ['workouttracker://'],
+    config: {
+      screens: {
+        'Log Workout': {
+          path: 'workout',
+          screens: {
+            StartWorkout: '',
+          },
+        },
+      },
+    },
+  };
+
   return (
-    <NavigationContainer theme={navigationTheme}>
+    <NavigationContainer ref={navigationRef} linking={linking} theme={navigationTheme}>
       <AppNavigator />
       <StatusBar style={colors.statusBar === 'dark' ? 'dark' : 'light'} />
     </NavigationContainer>
