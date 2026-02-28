@@ -55,4 +55,49 @@ Ship a local-first mobile app that replaces the notes-app workflow with structur
 - **Research needed:** No
 
 ---
-*Last updated: 2026-02-28 — v1.0 milestone complete*
+
+## Milestone: v2.0 — UX & Engagement
+
+Elevate the workout experience with templates, timers, streaks, and smart reminders — making the app a daily habit, not just a logging tool.
+
+### Phase 7: Workout Templates & Quick Start
+**Goal:** Users can save workouts as reusable templates and start new sessions from them with one tap.
+- Save completed workout as a template (name, exercises, default sets/reps/weight)
+- Quick-start workout from template (pre-fills exercises and sets)
+- Template management screen (rename, edit, delete templates)
+- Template suggestions on the Log Workout screen
+- **Research needed:** No
+
+### Phase 8: Rest Timer & Active Workout UX
+**Goal:** Built-in rest timer and improved active workout experience to reduce friction between sets.
+- Auto-start rest timer on set completion with configurable durations
+- Timer notification/alert when rest period ends
+- Per-exercise default rest time settings
+- Active workout UX improvements (reorder exercises, add notes per set)
+- **Research needed:** Yes — evaluate background timer and notification approaches in Expo (expo-notifications, expo-task-manager)
+
+### Phase 9: Streak Tracking & Motivation
+**Goal:** Gamify consistency with streak counters, workout frequency stats, and personal record celebrations.
+- Workout streak counter (consecutive days/weeks of training)
+- Weekly and monthly workout frequency stats on home/dashboard
+- Personal records detection and celebration (new PR badges/toasts)
+- Motivational summary cards (total volume lifted, workouts this month)
+- **Research needed:** No
+
+### Phase 10: Notifications & Reminders
+**Goal:** Keep users on track with scheduled workout reminders and smart nudges.
+- Scheduled workout reminder notifications (configurable days/times)
+- Rest day suggestions based on recent workout history
+- "You haven't worked out in X days" re-engagement nudges
+- Notification preferences screen
+- **Research needed:** Yes — evaluate expo-notifications setup, permissions flow, and scheduling API
+
+### Phase 11: Home Screen Widget & Quick Actions
+**Goal:** Surface key workout data on the home screen and enable fast app entry points.
+- Home screen widget showing current streak and last workout summary
+- Quick actions (3D Touch / long press) for starting workouts from templates
+- Widget configuration options
+- **Research needed:** Yes — evaluate react-native widget libraries (react-native-android-widget, WidgetKit) and Expo compatibility
+
+---
+*Last updated: 2026-02-28 — v2.0 milestone defined*
