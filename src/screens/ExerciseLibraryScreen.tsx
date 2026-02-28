@@ -185,11 +185,15 @@ export default function ExerciseLibraryScreen({ navigation }: { navigation: any 
     );
   };
 
-  const renderSectionItem = ({ item, section }: { item: Exercise; section: Section }) => {
-    if (collapsedIds.has(section.muscleGroupId)) {
-      return null;
-    }
+  const filteredSections = useMemo(
+    () => sections.map((section) => ({
+      ...section,
+      data: collapsedIds.has(section.muscleGroupId) ? [] : section.data,
+    })),
+    [sections, collapsedIds]
+  );
 
+  const renderSectionItem = ({ item }: { item: Exercise }) => {
     return (
       <Pressable
         style={styles.exerciseRow}
@@ -260,7 +264,7 @@ export default function ExerciseLibraryScreen({ navigation }: { navigation: any 
         />
       ) : (
         <SectionList
-          sections={sections}
+          sections={filteredSections}
           keyExtractor={(item) => item.id.toString()}
           renderSectionHeader={renderSectionHeader}
           renderItem={renderSectionItem}
