@@ -12,7 +12,7 @@ Polish the app with a glassmorphic UI redesign (dark + light), full onboarding f
 
 | Phase | Name | Research | Status |
 |-------|------|----------|--------|
-| 12 | Stability & Performance Audit | no | pending |
+| 12 | Stability & Performance Audit | no | done (1 plan, 14 commits) |
 | 13 | Glassmorphic Design System | yes | pending |
 | 14 | Glassmorphic UI — Core Screens | no | pending |
 | 15 | Glassmorphic UI — Secondary Screens | no | pending |
@@ -20,4 +20,4 @@ Polish the app with a glassmorphic UI redesign (dark + light), full onboarding f
 | 17 | Final Polish & Integration | no | pending |
 
 ---
-*Last updated: 2026-02-28 — v3.0 milestone created*
+*Last updated: 2026-02-28 — phase 12 completed*
