@@ -588,7 +588,10 @@ export function getWeeklyStreak(weeklyGoal: number): number {
   const checkMonday = new Date(currentMonday);
   checkMonday.setDate(checkMonday.getDate() - 7);
 
-  while (true) {
+  const MAX_WEEKS = 520; // 10 years safety cap
+  let iterations = 0;
+  while (iterations < MAX_WEEKS) {
+    iterations++;
     const weekStart = checkMonday.toISOString().split('T')[0];
     const weekEndDate = new Date(checkMonday);
     weekEndDate.setDate(weekEndDate.getDate() + 6);
