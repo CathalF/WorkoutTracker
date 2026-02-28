@@ -33,6 +33,7 @@ interface ActiveExercise {
   exerciseId: number;
   exerciseName: string;
   sets: SetEntry[];
+  notes?: string;
 }
 
 function formatTime(seconds: number): string {
@@ -177,6 +178,41 @@ export default function ActiveWorkoutScreen({ navigation, route }: Props) {
 
   const removeExercise = (index: number) => {
     setExercises((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const moveExercise = (fromIndex: number, toIndex: number) => {
+    if (toIndex < 0 || toIndex >= exercises.length) return;
+    setExercises((prev) => {
+      const updated = [...prev];
+      const [moved] = updated.splice(fromIndex, 1);
+      updated.splice(toIndex, 0, moved);
+      return updated;
+    });
+    // Re-index completed sets
+    setCompletedSets((prev) => {
+      const remapped = new Set<string>();
+      for (const k of prev) {
+        const [exI, sI] = k.split('-').map(Number);
+        let newExI = exI;
+        if (exI === fromIndex) {
+          newExI = toIndex;
+        } else if (fromIndex < toIndex && exI > fromIndex && exI <= toIndex) {
+          newExI = exI - 1;
+        } else if (fromIndex > toIndex && exI >= toIndex && exI < fromIndex) {
+          newExI = exI + 1;
+        }
+        remapped.add(`${newExI}-${sI}`);
+      }
+      return remapped;
+    });
+  };
+
+  const updateExerciseNotes = (exerciseIndex: number, notes: string) => {
+    setExercises((prev) => {
+      const updated = [...prev];
+      updated[exerciseIndex] = { ...updated[exerciseIndex], notes };
+      return updated;
+    });
   };
 
   const addSetToExercise = (exerciseIndex: number) => {
@@ -352,7 +388,13 @@ export default function ActiveWorkoutScreen({ navigation, route }: Props) {
       Alert.alert('Error', 'Could not determine workout muscle group.');
       return;
     }
-    const workoutId = createWorkout(today, resolvedMuscleGroupId);
+    // Collect exercise notes
+    const notesLines = exercises
+      .filter((ex) => ex.notes?.trim())
+      .map((ex) => `${ex.exerciseName}: ${ex.notes!.trim()}`);
+    const workoutNotes = notesLines.length > 0 ? notesLines.join('\n') : undefined;
+
+    const workoutId = createWorkout(today, resolvedMuscleGroupId, workoutNotes);
 
     for (const exercise of exercises) {
       let setNumber = 1;
@@ -485,6 +527,22 @@ export default function ActiveWorkoutScreen({ navigation, route }: Props) {
                     </Text>
                   </View>
                   <View style={staticStyles.exerciseActions}>
+                    <Pressable
+                      onPress={() => moveExercise(exIdx, exIdx - 1)}
+                      hitSlop={6}
+                      disabled={exIdx === 0}
+                      style={{ opacity: exIdx === 0 ? 0.3 : 1 }}
+                    >
+                      <Ionicons name="chevron-up" size={18} color={colors.textSecondary} />
+                    </Pressable>
+                    <Pressable
+                      onPress={() => moveExercise(exIdx, exIdx + 1)}
+                      hitSlop={6}
+                      disabled={exIdx === exercises.length - 1}
+                      style={{ opacity: exIdx === exercises.length - 1 ? 0.3 : 1 }}
+                    >
+                      <Ionicons name="chevron-down" size={18} color={colors.textSecondary} />
+                    </Pressable>
                     <Pressable onPress={() => openRestTimeModal(exIdx)} hitSlop={8}>
                       <Ionicons name="timer-outline" size={18} color={colors.textSecondary} />
                     </Pressable>
@@ -591,6 +649,40 @@ export default function ActiveWorkoutScreen({ navigation, route }: Props) {
                     </View>
                   );
                 })}
+
+                {/* Notes section */}
+                {exercise.notes !== undefined ? (
+                  <View style={staticStyles.notesSection}>
+                    <TextInput
+                      style={styles.notesInput}
+                      value={exercise.notes}
+                      onChangeText={(v) => updateExerciseNotes(exIdx, v)}
+                      placeholder="e.g., Felt heavy today, use lighter weight next time"
+                      placeholderTextColor={colors.textTertiary}
+                      multiline
+                      numberOfLines={2}
+                    />
+                    <Pressable onPress={() => {
+                      setExercises((prev) => {
+                        const updated = [...prev];
+                        const ex = { ...updated[exIdx] };
+                        delete ex.notes;
+                        updated[exIdx] = ex;
+                        return updated;
+                      });
+                    }}>
+                      <Text style={styles.removeNoteLink}>Remove note</Text>
+                    </Pressable>
+                  </View>
+                ) : (
+                  <Pressable
+                    style={staticStyles.addNoteButton}
+                    onPress={() => updateExerciseNotes(exIdx, '')}
+                  >
+                    <Ionicons name="create-outline" size={14} color={colors.textSecondary} />
+                    <Text style={styles.addNoteText}>Add note</Text>
+                  </Pressable>
+                )}
 
                 <Pressable
                   style={staticStyles.addSetButton}
@@ -846,6 +938,17 @@ const staticStyles = StyleSheet.create({
     width: 28,
     alignItems: 'center',
   },
+  notesSection: {
+    marginTop: 8,
+    marginBottom: 4,
+  },
+  addNoteButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: 8,
+    paddingVertical: 4,
+  },
   addSetButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1032,6 +1135,27 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     textAlign: 'center',
     marginBottom: 6,
     marginTop: -4,
+  },
+  notesInput: {
+    borderWidth: 1,
+    borderColor: colors.separator,
+    borderRadius: 8,
+    padding: 10,
+    fontSize: 14,
+    color: colors.text,
+    backgroundColor: colors.background,
+    minHeight: 52,
+    textAlignVertical: 'top',
+    marginBottom: 4,
+  },
+  removeNoteLink: {
+    fontSize: 12,
+    color: colors.destructive,
+    textAlign: 'right',
+  },
+  addNoteText: {
+    fontSize: 13,
+    color: colors.textSecondary,
   },
   addSetText: {
     fontSize: 15,
