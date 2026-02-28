@@ -366,10 +366,15 @@ export function getAllTemplates(): WorkoutTemplate[] {
   const rows = db.getAllSync<Omit<WorkoutTemplate, 'muscle_group_ids'> & { muscle_group_ids: string }>(
     'SELECT id, name, muscle_group_id, split_label, muscle_group_ids, program_id, sort_order, created_at FROM workout_templates ORDER BY sort_order, created_at'
   );
-  return rows.map((row) => ({
-    ...row,
-    muscle_group_ids: JSON.parse(row.muscle_group_ids) as number[],
-  }));
+  return rows.map((row) => {
+    let muscleGroupIds: number[];
+    try {
+      muscleGroupIds = JSON.parse(row.muscle_group_ids);
+    } catch {
+      muscleGroupIds = [];
+    }
+    return { ...row, muscle_group_ids: muscleGroupIds };
+  });
 }
 
 export function getTemplateExerciseCounts(): Map<number, number> {
@@ -401,9 +406,16 @@ export function getTemplateWithExercises(templateId: number): TemplateWithExerci
     templateId
   );
 
+  let muscleGroupIds: number[];
+  try {
+    muscleGroupIds = JSON.parse(row.muscle_group_ids);
+  } catch {
+    muscleGroupIds = [];
+  }
+
   return {
     ...row,
-    muscle_group_ids: JSON.parse(row.muscle_group_ids) as number[],
+    muscle_group_ids: muscleGroupIds,
     exercises,
   };
 }
@@ -651,19 +663,22 @@ export function setSetting(key: string, value: string): void {
 
 export function getNotificationPreferences(): NotificationPreferences {
   const raw = getSetting('notification_prefs', '');
-  if (!raw) {
-    return {
-      remindersEnabled: false,
-      reminderDays: [2, 4, 6],  // Mon, Wed, Fri default
-      reminderHour: 8,
-      reminderMinute: 0,
-      nudgeEnabled: false,
-      nudgeDays: 3,
-      restDayEnabled: false,
-      restDayThreshold: 3,
-    };
+  const defaults: NotificationPreferences = {
+    remindersEnabled: false,
+    reminderDays: [2, 4, 6],  // Mon, Wed, Fri default
+    reminderHour: 8,
+    reminderMinute: 0,
+    nudgeEnabled: false,
+    nudgeDays: 3,
+    restDayEnabled: false,
+    restDayThreshold: 3,
+  };
+  if (!raw) return defaults;
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return defaults;
   }
-  return JSON.parse(raw);
 }
 
 export function saveNotificationPreferences(prefs: NotificationPreferences): void {
