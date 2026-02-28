@@ -93,7 +93,7 @@ Elevate the workout experience with templates, timers, streaks, and smart remind
 - Notification preferences screen
 - **Research needed:** Yes — evaluate expo-notifications setup, permissions flow, and scheduling API
 
-### Phase 11: Home Screen Widget & Quick Actions
+### Phase 11: Home Screen Widget & Quick Actions *(1 plan — 11-01 completed)*
 **Goal:** Surface key workout data on the home screen and enable fast app entry points.
 - Home screen widget showing current streak and last workout summary
 - Quick actions (3D Touch / long press) for starting workouts from templates
@@ -101,4 +101,4 @@ Elevate the workout experience with templates, timers, streaks, and smart remind
 - **Research needed:** Yes — evaluate react-native widget libraries (react-native-android-widget, WidgetKit) and Expo compatibility
 
 ---
-*Last updated: 2026-02-28 — Phase 10 completed*
+*Last updated: 2026-02-28 — Phase 11 completed, v2.0 milestone finished*

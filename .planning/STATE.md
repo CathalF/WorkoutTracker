@@ -13,7 +13,7 @@ Phase 11: Home Screen Widget & Quick Actions
 | 8 | Rest Timer & Active Workout UX | completed |
 | 9 | Streak Tracking & Motivation | completed |
 | 10 | Notifications & Reminders | completed |
-| 11 | Home Screen Widget & Quick Actions | not started |
+| 11 | Home Screen Widget & Quick Actions | completed |
 
 ## Plan Status
 | Phase | Plan | Status |
@@ -22,7 +22,7 @@ Phase 11: Home Screen Widget & Quick Actions
 | 8 | 08-01 | completed |
 | 9 | 09-01 | completed |
 | 10 | 10-01 | completed |
-| 11 | — | not started |
+| 11 | 11-01 | completed |
 
 ## Active Issues
 None
@@ -49,6 +49,10 @@ None
 | JSON notification_prefs in settings | 2026-02-28 | NotificationPreferences stored as JSON string in settings table under key 'notification_prefs' |
 | DashboardStackNavigator for Settings | 2026-02-28 | Dashboard tab uses a native stack navigator to push Settings screen; gear icon navigates instead of opening a modal |
 | Fire-and-forget notification hooks | 2026-02-28 | handleWorkoutCompleted() called without await after saving workout — notifications are non-critical |
+| iOS widget deferred | 2026-02-28 | WidgetKit requires Swift/SwiftUI via @bacons/apple-targets; defer until expo-widgets matures in SDK 55+ |
+| expo-quick-actions for shortcuts | 2026-02-28 | Cross-platform app icon shortcuts; expo-quick-actions by Evan Bacon, works with SDK 54 |
+| react-native-android-widget for widget | 2026-02-28 | Android widget via config plugin; headless JS handler queries expo-sqlite directly using existing service functions |
+| SQLite in widget headless context | 2026-02-28 | getDatabase() lazy-opens DB with idempotent schema init — safe in headless JS task for widget rendering |
 
 ---
-*Last updated: 2026-02-28 — Phase 10 completed, advancing to Phase 11*
+*Last updated: 2026-02-28 — Phase 11 plan 11-01 completed, v2.0 milestone finished*
