@@ -19,6 +19,7 @@ import AppNavigator from './src/navigation/AppNavigator';
 import { initializeDatabase } from './src/database';
 import { ThemeProvider, useTheme } from './src/theme';
 import ErrorBoundary from './src/components/ErrorBoundary';
+import { setupNotificationChannels, syncNotificationSchedules } from './src/utils/notifications';
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -28,6 +29,8 @@ Notifications.setNotificationHandler({
     shouldShowList: true,
   }),
 });
+
+setupNotificationChannels();
 
 function AppContent() {
   const colors = useTheme();
@@ -64,6 +67,7 @@ export default function App() {
       initializeDatabase();
       setIsReady(true);
       requestNotificationPermissions();
+      syncNotificationSchedules();
     } catch (error) {
       console.error('Failed to initialize database:', error);
       setInitError(true);

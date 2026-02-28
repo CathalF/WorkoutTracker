@@ -137,3 +137,14 @@ export interface MonthlyStats {
   workoutCount: number;
   totalVolume: number;
 }
+
+export interface NotificationPreferences {
+  remindersEnabled: boolean;
+  reminderDays: number[];   // expo weekday numbers: 1=Sun, 2=Mon, ..., 7=Sat
+  reminderHour: number;     // 0-23
+  reminderMinute: number;   // 0-59
+  nudgeEnabled: boolean;
+  nudgeDays: number;        // days of inactivity before nudge (2-7)
+  restDayEnabled: boolean;
+  restDayThreshold: number; // consecutive training days before suggesting rest (2-5)
+}
