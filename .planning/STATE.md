@@ -4,13 +4,13 @@
 v2.0 — UX & Engagement
 
 ## Current Phase
-Phase 8: Rest Timer & Active Workout UX
+Phase 9: Streak Tracking & Motivation
 
 ## Phase Status
 | Phase | Name | Status |
 |-------|------|--------|
 | 7 | Workout Templates & Quick Start | completed |
-| 8 | Rest Timer & Active Workout UX | not started |
+| 8 | Rest Timer & Active Workout UX | completed |
 | 9 | Streak Tracking & Motivation | not started |
 | 10 | Notifications & Reminders | not started |
 | 11 | Home Screen Widget & Quick Actions | not started |
@@ -19,7 +19,7 @@ Phase 8: Rest Timer & Active Workout UX
 | Phase | Plan | Status |
 |-------|------|--------|
 | 7 | 07-01 | completed |
-| 8 | — | not started |
+| 8 | 08-01 | completed |
 | 9 | — | not started |
 | 10 | — | not started |
 | 11 | — | not started |
@@ -40,6 +40,9 @@ None
 | Static colors for ErrorBoundary | 2026-02-28 | ErrorBoundary uses hardcoded colors since it wraps ThemeProvider and cannot use useTheme() |
 | JSON for muscle_group_ids | 2026-02-28 | Template muscle_group_ids stored as JSON string in SQLite, parsed on read |
 | Inline exercise picker for management | 2026-02-28 | TemplateManagement uses its own modal exercise picker instead of navigating to ExercisePicker screen |
+| Timestamp-based timer | 2026-02-28 | Rest timer uses Date.now() + duration with setInterval(250ms) for smooth countdown; AppState listener recalculates on foreground return |
+| expo-notifications for background timer | 2026-02-28 | Local notification scheduled on timer start, cancelled on in-app completion — no expo-task-manager needed |
+| ALTER TABLE try/catch migration | 2026-02-28 | SQLite ALTER TABLE ADD COLUMN throws if column exists; wrapped in try/catch since IF NOT EXISTS isn't supported |
 
 ---
-*Last updated: 2026-02-28 — Phase 7 completed, advancing to Phase 8*
+*Last updated: 2026-02-28 — Phase 8 completed, advancing to Phase 9*

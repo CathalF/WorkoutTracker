@@ -69,7 +69,7 @@ Elevate the workout experience with templates, timers, streaks, and smart remind
 - Previous performance reference when starting from template
 - **Research needed:** No
 
-### Phase 8: Rest Timer & Active Workout UX
+### Phase 8: Rest Timer & Active Workout UX *(1 plan — 08-01 completed)*
 **Goal:** Built-in rest timer and improved active workout experience to reduce friction between sets.
 - Auto-start rest timer on set completion with configurable durations
 - Timer notification/alert when rest period ends
@@ -101,4 +101,4 @@ Elevate the workout experience with templates, timers, streaks, and smart remind
 - **Research needed:** Yes — evaluate react-native widget libraries (react-native-android-widget, WidgetKit) and Expo compatibility
 
 ---
-*Last updated: 2026-02-28 — Phase 7 completed*
+*Last updated: 2026-02-28 — Phase 8 completed*
