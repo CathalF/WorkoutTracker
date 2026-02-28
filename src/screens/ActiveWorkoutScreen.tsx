@@ -786,6 +786,8 @@ export default function ActiveWorkoutScreen({ navigation, route }: Props) {
         ]}
         pointerEvents={isRunning || showRestComplete ? 'auto' : 'none'}
       >
+        <BlurView intensity={80} tint={isDark ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
+        <View style={[StyleSheet.absoluteFill, { backgroundColor: colors.glassElevated }]} />
         {/* Progress track */}
         <View style={styles.timerProgressTrack}>
           <View style={[styles.timerProgressFill, { width: `${timerProgress * 100}%` }]} />
@@ -1204,7 +1206,9 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: colors.background,
+    backgroundColor: colors.glassSurface,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.glassBorder,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -1218,23 +1222,25 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     width: 56,
     height: 36,
     borderWidth: 1,
-    borderColor: colors.separator,
+    borderColor: colors.glassBorder,
     borderRadius: 8,
     textAlign: 'center',
     fontSize: 16,
     fontWeight: '500',
     color: colors.text,
+    backgroundColor: colors.glassSurface,
   },
   repsInput: {
     width: 44,
     height: 36,
     borderWidth: 1,
-    borderColor: colors.separator,
+    borderColor: colors.glassBorder,
     borderRadius: 8,
     textAlign: 'center',
     fontSize: 16,
     fontWeight: '500',
     color: colors.text,
+    backgroundColor: colors.glassSurface,
   },
   prevPerformance: {
     fontSize: 11,
@@ -1245,12 +1251,12 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   },
   notesInput: {
     borderWidth: 1,
-    borderColor: colors.separator,
+    borderColor: colors.glassBorder,
     borderRadius: 8,
     padding: 10,
     fontSize: 14,
     color: colors.text,
-    backgroundColor: colors.background,
+    backgroundColor: colors.glassSurface,
     minHeight: 52,
     textAlignVertical: 'top',
     marginBottom: 4,
@@ -1273,13 +1279,13 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.surface,
+    backgroundColor: colors.glassSurface,
     borderRadius: 12,
     paddingVertical: 14,
     marginBottom: 12,
     gap: 8,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
+    borderColor: colors.glassBorder,
   },
   addExerciseText: {
     fontSize: 16,
@@ -1299,9 +1305,9 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: colors.surface,
+    overflow: 'hidden',
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: colors.border,
+    borderTopColor: colors.glassBorder,
   },
   timerProgressTrack: {
     height: 3,
@@ -1324,9 +1330,9 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 8,
-    backgroundColor: colors.background,
+    backgroundColor: colors.glassSurface,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
+    borderColor: colors.glassBorder,
   },
   timerControlText: {
     fontSize: 14,
