@@ -18,6 +18,7 @@ import {
   LastPerformanceSet,
   RecentPR,
   MonthlyStats,
+  NotificationPreferences,
 } from '../types';
 
 export function getAllMuscleGroups(): MuscleGroup[] {
@@ -631,4 +632,48 @@ export function setSetting(key: string, value: string): void {
     key,
     value
   );
+}
+
+// --- Notification preferences ---
+
+export function getNotificationPreferences(): NotificationPreferences {
+  const raw = getSetting('notification_prefs', '');
+  if (!raw) {
+    return {
+      remindersEnabled: false,
+      reminderDays: [2, 4, 6],  // Mon, Wed, Fri default
+      reminderHour: 8,
+      reminderMinute: 0,
+      nudgeEnabled: false,
+      nudgeDays: 3,
+      restDayEnabled: false,
+      restDayThreshold: 3,
+    };
+  }
+  return JSON.parse(raw);
+}
+
+export function saveNotificationPreferences(prefs: NotificationPreferences): void {
+  setSetting('notification_prefs', JSON.stringify(prefs));
+}
+
+export function getConsecutiveTrainingDays(): number {
+  const db = getDatabase();
+  const today = new Date();
+  let count = 0;
+  for (let i = 0; i < 14; i++) {
+    const date = new Date(today);
+    date.setDate(date.getDate() - i);
+    const dateStr = date.toISOString().split('T')[0];
+    const row = db.getFirstSync<{ count: number }>(
+      'SELECT COUNT(*) as count FROM workouts WHERE date = ?',
+      [dateStr]
+    );
+    if (row && row.count > 0) {
+      count++;
+    } else {
+      break;
+    }
+  }
+  return count;
 }
