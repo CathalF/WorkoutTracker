@@ -5,7 +5,7 @@ interface WorkoutWidgetProps {
   streak: number;
   monthlyWorkouts: number;
   lastWorkoutLabel: string;   // e.g., "Chest & Triceps"
-  lastWorkoutMeta: string;    // e.g., "Today · 6 exercises · 4,500 lbs"
+  lastWorkoutMeta: string;    // e.g., "Today · 6 exercises · 4,500 kg"
   hasWorkouts: boolean;
 }
 

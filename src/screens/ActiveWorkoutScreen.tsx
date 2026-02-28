@@ -954,7 +954,7 @@ export default function ActiveWorkoutScreen({ navigation, route }: Props) {
 
             <View style={styles.prValueCard}>
               <Text style={styles.prValue}>
-                {prModalData?.weight} lbs × {prModalData?.reps} reps
+                {prModalData?.weight} kg ×{prModalData?.reps} reps
               </Text>
               <Text style={styles.prTypeLabel}>
                 {prModalData?.prType === 'weight' ? 'Weight PR' : 'Rep PR'}

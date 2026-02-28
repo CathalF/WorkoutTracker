@@ -44,7 +44,7 @@ function getWidgetData() {
     let lastWorkoutMeta = '';
     if (lastWorkout) {
       lastWorkoutLabel = lastWorkout.muscle_group_name;
-      lastWorkoutMeta = `${formatRelativeDate(lastWorkout.date)} \u00B7 ${lastWorkout.exercise_count} exercises \u00B7 ${formatVolume(lastWorkout.total_volume)} lbs`;
+      lastWorkoutMeta = `${formatRelativeDate(lastWorkout.date)} \u00B7 ${lastWorkout.exercise_count} exercises \u00B7 ${formatVolume(lastWorkout.total_volume)} kg`;
     }
 
     return {

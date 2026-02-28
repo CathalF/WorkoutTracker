@@ -199,7 +199,7 @@ export default function WorkoutDetailScreen({ navigation, route }: Props) {
             style={staticStyles.editableCell}
             onPress={() => handleStartEdit(set.id, 'weight', set.weight)}
           >
-            <Text style={styles.setCellText}>{set.weight} lbs</Text>
+            <Text style={styles.setCellText}>{set.weight} kg</Text>
             <Ionicons name="pencil-outline" size={12} color={colors.textTertiary} />
           </Pressable>
         )}
@@ -277,7 +277,7 @@ export default function WorkoutDetailScreen({ navigation, route }: Props) {
           <Text style={styles.summaryStats}>
             {stats.exerciseCount} exercise{stats.exerciseCount !== 1 ? 's' : ''} ·{' '}
             {stats.setCount} set{stats.setCount !== 1 ? 's' : ''} ·{' '}
-            {formatVolume(stats.totalVolume)} lbs volume
+            {formatVolume(stats.totalVolume)} kg volume
           </Text>
           {workout.notes ? (
             <Text style={styles.summaryNotes}>{workout.notes}</Text>

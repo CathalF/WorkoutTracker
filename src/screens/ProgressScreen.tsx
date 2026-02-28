@@ -243,8 +243,8 @@ export default function ProgressScreen() {
             <View style={staticStyles.noDataContainer}>
               <Text style={styles.singlePointValue}>
                 {chartType === 'weight'
-                  ? `${(currentData[0] as ExerciseProgressPoint).max_weight} lbs`
-                  : `${(currentData[0] as ExerciseVolumePoint).total_volume} lbs`}
+                  ? `${(currentData[0] as ExerciseProgressPoint).max_weight} kg`
+                  : `${(currentData[0] as ExerciseVolumePoint).total_volume} kg`}
               </Text>
               <Text style={styles.noDataText}>Log more sessions to see trends</Text>
             </View>
@@ -275,7 +275,7 @@ export default function ProgressScreen() {
                 pointerLabelHeight: 30,
                 pointerLabelComponent: (items: { value: number }[]) => (
                   <View style={styles.tooltipContainer}>
-                    <Text style={styles.tooltipText}>{items[0].value} lbs</Text>
+                    <Text style={styles.tooltipText}>{items[0].value} kg</Text>
                   </View>
                 ),
               }}
@@ -295,7 +295,7 @@ export default function ProgressScreen() {
               xAxisLabelTextStyle={{ fontSize: 11, color: colors.textSecondary }}
               renderTooltip={(item: { value: number }) => (
                 <View style={styles.tooltipContainer}>
-                  <Text style={styles.tooltipText}>{Math.round(item.value)} lbs</Text>
+                  <Text style={styles.tooltipText}>{Math.round(item.value)} kg</Text>
                 </View>
               )}
               isAnimated
@@ -315,7 +315,7 @@ export default function ProgressScreen() {
                   <View style={staticStyles.prInfo}>
                     <Text style={styles.prLabel}>Max Weight</Text>
                     <Text style={styles.prValue}>
-                      {personalRecords.maxWeight.weight} lbs
+                      {personalRecords.maxWeight.weight} kg
                       <Text style={styles.prReps}> x {personalRecords.maxWeight.reps} reps</Text>
                     </Text>
                     <Text style={styles.prDate}>{formatRecordDate(personalRecords.maxWeight.date)}</Text>
@@ -331,7 +331,7 @@ export default function ProgressScreen() {
                   <View style={staticStyles.prInfo}>
                     <Text style={styles.prLabel}>Best Volume</Text>
                     <Text style={styles.prValue}>
-                      {formatVolume(personalRecords.maxVolume.total_volume)} lbs
+                      {formatVolume(personalRecords.maxVolume.total_volume)} kg
                     </Text>
                     <Text style={styles.prDate}>{formatRecordDate(personalRecords.maxVolume.date)}</Text>
                   </View>

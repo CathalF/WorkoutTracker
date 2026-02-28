@@ -170,7 +170,7 @@ export default function DashboardScreen() {
                 <Text style={styles.volumeLabel}>Volume This Month</Text>
               </View>
               <Text style={styles.volumeValue}>
-                {formatVolume(monthlyStats.totalVolume)} lbs
+                {formatVolume(monthlyStats.totalVolume)} kg
               </Text>
             </View>
 
@@ -185,7 +185,7 @@ export default function DashboardScreen() {
                   <View style={staticStyles.prInfo}>
                     <Text style={styles.prName}>{pr.exercise_name}</Text>
                     <Text style={styles.prDetail}>
-                      {pr.weight} lbs × {pr.reps} reps · {pr.pr_type === 'weight' ? 'Weight PR' : 'Rep PR'}
+                      {pr.weight} kg × {pr.reps} reps · {pr.pr_type === 'weight' ? 'Weight PR' : 'Rep PR'}
                     </Text>
                   </View>
                   <Text style={styles.prDate}>{formatDate(pr.date)}</Text>

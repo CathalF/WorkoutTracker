@@ -163,7 +163,7 @@ export default function HistoryScreen() {
           <Text style={styles.workoutStats}>
             {item.exercise_count} exercise{item.exercise_count !== 1 ? 's' : ''} ·{' '}
             {item.set_count} set{item.set_count !== 1 ? 's' : ''} ·{' '}
-            {formatVolume(item.total_volume)} lbs volume
+            {formatVolume(item.total_volume)} kg volume
           </Text>
         </View>
         <Ionicons name="chevron-forward" size={20} color={colors.textTertiary} />
