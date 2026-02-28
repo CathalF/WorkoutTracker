@@ -4,7 +4,6 @@ import {
   Alert,
   Animated,
   Keyboard,
-  Modal,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -21,7 +20,7 @@ import { WorkoutStackParamList } from '../navigation/WorkoutStackNavigator';
 import { createWorkout, addSet, getExerciseMuscleGroupId, createTemplate, getLastPerformance, getExerciseRestTime, setExerciseRestTime, clearExerciseRestTime, DEFAULT_REST_SECONDS, checkForWeightPR, checkForRepsPR, savePR } from '../database/services';
 import { LastPerformanceSet } from '../types';
 import { useThemeControl, ThemeColors } from '../theme';
-import { GradientBackground, GlassCard } from '../components/glass';
+import { GradientBackground, GlassCard, GlassModal } from '../components/glass';
 import useRestTimer from '../hooks/useRestTimer';
 import { scheduleRestNotification, cancelRestNotification, handleWorkoutCompleted } from '../utils/notifications';
 import { refreshQuickActions } from '../utils/quickActions';
@@ -828,151 +827,134 @@ export default function ActiveWorkoutScreen({ navigation, route }: Props) {
       </Animated.View>
 
       {/* Rest Time Settings Modal */}
-      <Modal
+      <GlassModal
         visible={restTimeModalExercise !== null}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setRestTimeModalExercise(null)}
+        onClose={() => setRestTimeModalExercise(null)}
+        title="Rest Time"
       >
-        <Pressable style={styles.modalOverlay} onPress={() => setRestTimeModalExercise(null)}>
-          <Pressable style={styles.modalContent} onPress={() => {}}>
-            <Text style={styles.modalTitle}>
-              Rest Time
-            </Text>
-            <Text style={styles.restTimeModalSubtitle} numberOfLines={1}>
-              {restTimeModalExercise?.name}
-            </Text>
+        <Text style={styles.restTimeModalSubtitle} numberOfLines={1}>
+          {restTimeModalExercise?.name}
+        </Text>
 
-            <Text style={styles.restTimeModalDisplay}>
-              {formatTime(restTimeModalValue)}
-            </Text>
+        <Text style={styles.restTimeModalDisplay}>
+          {formatTime(restTimeModalValue)}
+        </Text>
 
-            <View style={staticStyles.restTimePresets}>
-              {[30, 60, 90, 120, 180, 300].map((s) => (
-                <Pressable
-                  key={s}
-                  style={[
-                    styles.restTimePresetButton,
-                    restTimeModalValue === s && styles.restTimePresetActive,
-                  ]}
-                  onPress={() => setRestTimeModalValue(s)}
-                >
-                  <Text
-                    style={[
-                      styles.restTimePresetText,
-                      restTimeModalValue === s && styles.restTimePresetTextActive,
-                    ]}
-                  >
-                    {formatTime(s)}
-                  </Text>
-                </Pressable>
-              ))}
-            </View>
-
-            <View style={staticStyles.restTimeAdjust}>
-              <Pressable
-                style={styles.restTimeAdjustButton}
-                onPress={() => setRestTimeModalValue((v) => Math.max(15, v - 15))}
+        <View style={staticStyles.restTimePresets}>
+          {[30, 60, 90, 120, 180, 300].map((s) => (
+            <Pressable
+              key={s}
+              style={[
+                styles.restTimePresetButton,
+                restTimeModalValue === s && styles.restTimePresetActive,
+              ]}
+              onPress={() => setRestTimeModalValue(s)}
+            >
+              <Text
+                style={[
+                  styles.restTimePresetText,
+                  restTimeModalValue === s && styles.restTimePresetTextActive,
+                ]}
               >
-                <Text style={styles.timerControlText}>-15s</Text>
-              </Pressable>
-              <Pressable
-                style={styles.restTimeAdjustButton}
-                onPress={() => setRestTimeModalValue((v) => v + 15)}
-              >
-                <Text style={styles.timerControlText}>+15s</Text>
-              </Pressable>
-            </View>
-
-            <Pressable onPress={handleClearRestTime}>
-              <Text style={styles.restTimeDefaultLink}>Use Default ({formatTime(DEFAULT_REST_SECONDS)})</Text>
+                {formatTime(s)}
+              </Text>
             </Pressable>
+          ))}
+        </View>
 
-            <View style={staticStyles.modalButtons}>
-              <Pressable
-                style={[styles.modalButton, styles.modalCancelButton]}
-                onPress={() => setRestTimeModalExercise(null)}
-              >
-                <Text style={styles.modalCancelText}>Cancel</Text>
-              </Pressable>
-              <Pressable
-                style={[styles.modalButton, styles.modalSaveButton]}
-                onPress={handleSaveRestTime}
-              >
-                <Text style={staticStyles.modalSaveText}>Save</Text>
-              </Pressable>
-            </View>
+        <View style={staticStyles.restTimeAdjust}>
+          <Pressable
+            style={styles.restTimeAdjustButton}
+            onPress={() => setRestTimeModalValue((v) => Math.max(15, v - 15))}
+          >
+            <Text style={styles.timerControlText}>-15s</Text>
           </Pressable>
-        </Pressable>
-      </Modal>
+          <Pressable
+            style={styles.restTimeAdjustButton}
+            onPress={() => setRestTimeModalValue((v) => v + 15)}
+          >
+            <Text style={styles.timerControlText}>+15s</Text>
+          </Pressable>
+        </View>
 
-      <Modal
+        <Pressable onPress={handleClearRestTime}>
+          <Text style={styles.restTimeDefaultLink}>Use Default ({formatTime(DEFAULT_REST_SECONDS)})</Text>
+        </Pressable>
+
+        <View style={staticStyles.modalButtons}>
+          <Pressable
+            style={[styles.modalButton, styles.modalCancelButton]}
+            onPress={() => setRestTimeModalExercise(null)}
+          >
+            <Text style={styles.modalCancelText}>Cancel</Text>
+          </Pressable>
+          <Pressable
+            style={[styles.modalButton, styles.modalSaveButton]}
+            onPress={handleSaveRestTime}
+          >
+            <Text style={staticStyles.modalSaveText}>Save</Text>
+          </Pressable>
+        </View>
+      </GlassModal>
+
+      {/* Template Save Modal */}
+      <GlassModal
         visible={templateModalVisible}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setTemplateModalVisible(false)}
+        onClose={() => setTemplateModalVisible(false)}
+        title="Save as Template"
       >
-        <Pressable style={styles.modalOverlay} onPress={() => setTemplateModalVisible(false)}>
-          <Pressable style={styles.modalContent} onPress={() => {}}>
-            <Text style={styles.modalTitle}>Save as Template</Text>
-            <TextInput
-              style={styles.modalInput}
-              value={templateName}
-              onChangeText={setTemplateName}
-              placeholder="Template name"
-              placeholderTextColor={colors.textTertiary}
-              autoFocus
-              selectTextOnFocus
-            />
-            <View style={staticStyles.modalButtons}>
-              <Pressable
-                style={[styles.modalButton, styles.modalCancelButton]}
-                onPress={() => setTemplateModalVisible(false)}
-              >
-                <Text style={styles.modalCancelText}>Cancel</Text>
-              </Pressable>
-              <Pressable
-                style={[styles.modalButton, styles.modalSaveButton]}
-                onPress={handleSaveTemplate}
-              >
-                <Text style={staticStyles.modalSaveText}>Save</Text>
-              </Pressable>
-            </View>
+        <TextInput
+          style={styles.modalInput}
+          value={templateName}
+          onChangeText={setTemplateName}
+          placeholder="Template name"
+          placeholderTextColor={colors.textTertiary}
+          autoFocus
+          selectTextOnFocus
+        />
+        <View style={staticStyles.modalButtons}>
+          <Pressable
+            style={[styles.modalButton, styles.modalCancelButton]}
+            onPress={() => setTemplateModalVisible(false)}
+          >
+            <Text style={styles.modalCancelText}>Cancel</Text>
           </Pressable>
-        </Pressable>
-      </Modal>
+          <Pressable
+            style={[styles.modalButton, styles.modalSaveButton]}
+            onPress={handleSaveTemplate}
+          >
+            <Text style={staticStyles.modalSaveText}>Save</Text>
+          </Pressable>
+        </View>
+      </GlassModal>
 
       {/* PR Celebration Modal */}
-      <Modal
+      <GlassModal
         visible={prModalData !== null}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setPrModalData(null)}
+        onClose={() => setPrModalData(null)}
       >
-        <Pressable style={styles.modalOverlay} onPress={() => setPrModalData(null)}>
-          <Pressable style={styles.prModalContent} onPress={() => {}}>
-            <Animated.View style={[staticStyles.prIconContainer, { backgroundColor: colors.warning + '15', transform: [{ scale: prIconScale }] }]}>
-              <Ionicons name="trophy" size={56} color={colors.warning} />
-            </Animated.View>
+        <View style={staticStyles.prModalCenter}>
+          <Animated.View style={[staticStyles.prIconContainer, { backgroundColor: colors.warning + '15', transform: [{ scale: prIconScale }] }]}>
+            <Ionicons name="trophy" size={56} color={colors.warning} />
+          </Animated.View>
 
-            <Text style={styles.prTitle}>New Personal Record!</Text>
-            <Text style={styles.prExerciseName}>{prModalData?.exerciseName}</Text>
+          <Text style={styles.prTitle}>New Personal Record!</Text>
+          <Text style={styles.prExerciseName}>{prModalData?.exerciseName}</Text>
 
-            <View style={styles.prValueCard}>
-              <Text style={styles.prValue}>
-                {prModalData?.weight} kg ×{prModalData?.reps} reps
-              </Text>
-              <Text style={styles.prTypeLabel}>
-                {prModalData?.prType === 'weight' ? 'Weight PR' : 'Rep PR'}
-              </Text>
-            </View>
+          <View style={styles.prValueCard}>
+            <Text style={styles.prValue}>
+              {prModalData?.weight} kg ×{prModalData?.reps} reps
+            </Text>
+            <Text style={styles.prTypeLabel}>
+              {prModalData?.prType === 'weight' ? 'Weight PR' : 'Rep PR'}
+            </Text>
+          </View>
 
-            <Pressable style={styles.prDismissButton} onPress={() => setPrModalData(null)}>
-              <Text style={staticStyles.prDismissText}>Keep Going!</Text>
-            </Pressable>
+          <Pressable style={styles.prDismissButton} onPress={() => setPrModalData(null)}>
+            <Text style={staticStyles.prDismissText}>Keep Going!</Text>
           </Pressable>
-        </Pressable>
-      </Modal>
+        </View>
+      </GlassModal>
     </GradientBackground>
   );
 }
@@ -1107,6 +1089,9 @@ const staticStyles = StyleSheet.create({
     justifyContent: 'center',
     gap: 12,
     marginBottom: 12,
+  },
+  prModalCenter: {
+    alignItems: 'center',
   },
   prIconContainer: {
     width: 100,
@@ -1375,9 +1360,9 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 8,
-    backgroundColor: colors.background,
+    backgroundColor: colors.glassSurface,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
+    borderColor: colors.glassBorder,
   },
   restTimePresetActive: {
     backgroundColor: colors.primary,
@@ -1395,9 +1380,9 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 8,
-    backgroundColor: colors.background,
+    backgroundColor: colors.glassSurface,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
+    borderColor: colors.glassBorder,
   },
   restTimeDefaultLink: {
     fontSize: 14,
@@ -1406,36 +1391,15 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     marginBottom: 4,
   },
   // Modal styles
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: colors.modalOverlay,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 32,
-  },
-  modalContent: {
-    backgroundColor: colors.surface,
-    borderRadius: 14,
-    padding: 24,
-    width: '100%',
-    maxWidth: 340,
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: colors.text,
-    textAlign: 'center',
-    marginBottom: 16,
-  },
   modalInput: {
     height: 44,
     borderWidth: 1,
-    borderColor: colors.separator,
+    borderColor: colors.glassBorder,
     borderRadius: 10,
     paddingHorizontal: 14,
     fontSize: 16,
     color: colors.text,
-    backgroundColor: colors.background,
+    backgroundColor: colors.glassSurface,
   },
   modalButton: {
     flex: 1,
@@ -1444,9 +1408,9 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     alignItems: 'center',
   },
   modalCancelButton: {
-    backgroundColor: colors.background,
+    backgroundColor: colors.glassSurface,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
+    borderColor: colors.glassBorder,
   },
   modalCancelText: {
     fontSize: 16,
@@ -1457,14 +1421,6 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     backgroundColor: colors.primary,
   },
   // PR modal styles
-  prModalContent: {
-    backgroundColor: colors.surface,
-    borderRadius: 14,
-    padding: 32,
-    width: '100%',
-    maxWidth: 340,
-    alignItems: 'center',
-  },
   prTitle: {
     fontSize: 24,
     fontWeight: '700',
@@ -1478,7 +1434,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   },
   prValueCard: {
     width: '100%',
-    backgroundColor: colors.background,
+    backgroundColor: colors.glassSurface,
     borderRadius: 12,
     padding: 16,
     alignItems: 'center',
