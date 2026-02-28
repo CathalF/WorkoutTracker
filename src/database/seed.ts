@@ -72,19 +72,26 @@ export function seedDatabase(db: SQLiteDatabase): void {
     return;
   }
 
-  for (const [muscleGroup, exercises] of Object.entries(SEED_DATA)) {
-    const result = db.runSync(
-      'INSERT INTO muscle_groups (name) VALUES (?)',
-      muscleGroup
-    );
-    const groupId = result.lastInsertRowId;
-
-    for (const exercise of exercises) {
-      db.runSync(
-        'INSERT INTO exercises (name, muscle_group_id, is_custom) VALUES (?, ?, 0)',
-        exercise,
-        groupId
+  db.execSync('BEGIN TRANSACTION');
+  try {
+    for (const [muscleGroup, exercises] of Object.entries(SEED_DATA)) {
+      const result = db.runSync(
+        'INSERT INTO muscle_groups (name) VALUES (?)',
+        muscleGroup
       );
+      const groupId = result.lastInsertRowId;
+
+      for (const exercise of exercises) {
+        db.runSync(
+          'INSERT INTO exercises (name, muscle_group_id, is_custom) VALUES (?, ?, 0)',
+          exercise,
+          groupId
+        );
+      }
     }
+    db.execSync('COMMIT');
+  } catch (e) {
+    db.execSync('ROLLBACK');
+    throw e;
   }
 }
