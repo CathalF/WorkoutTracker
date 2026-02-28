@@ -4,14 +4,14 @@
 v2.0 — UX & Engagement
 
 ## Current Phase
-Phase 9: Streak Tracking & Motivation
+Phase 10: Notifications & Reminders
 
 ## Phase Status
 | Phase | Name | Status |
 |-------|------|--------|
 | 7 | Workout Templates & Quick Start | completed |
 | 8 | Rest Timer & Active Workout UX | completed |
-| 9 | Streak Tracking & Motivation | not started |
+| 9 | Streak Tracking & Motivation | completed |
 | 10 | Notifications & Reminders | not started |
 | 11 | Home Screen Widget & Quick Actions | not started |
 
@@ -20,7 +20,7 @@ Phase 9: Streak Tracking & Motivation
 |-------|------|--------|
 | 7 | 07-01 | completed |
 | 8 | 08-01 | completed |
-| 9 | — | not started |
+| 9 | 09-01 | completed |
 | 10 | — | not started |
 | 11 | — | not started |
 
@@ -43,6 +43,9 @@ None
 | Timestamp-based timer | 2026-02-28 | Rest timer uses Date.now() + duration with setInterval(250ms) for smooth countdown; AppState listener recalculates on foreground return |
 | expo-notifications for background timer | 2026-02-28 | Local notification scheduled on timer start, cancelled on in-app completion — no expo-task-manager needed |
 | ALTER TABLE try/catch migration | 2026-02-28 | SQLite ALTER TABLE ADD COLUMN throws if column exists; wrapped in try/catch since IF NOT EXISTS isn't supported |
+| Exercises tab → Dashboard tab | 2026-02-28 | Replaced Exercises tab with Dashboard as default tab; Exercise Library still accessible via ExercisePicker during workout flow |
+| settings key-value table | 2026-02-28 | Simple key-value store for user preferences (weekly_goal); extensible for future settings |
+| PR detection on set completion | 2026-02-28 | Synchronous PR check against historical sets table in toggleSetComplete(); session deduplication via Set keys |
 
 ---
-*Last updated: 2026-02-28 — Phase 8 completed, advancing to Phase 9*
+*Last updated: 2026-02-28 — Phase 9 completed, advancing to Phase 10*

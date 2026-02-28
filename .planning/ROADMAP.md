@@ -77,7 +77,7 @@ Elevate the workout experience with templates, timers, streaks, and smart remind
 - Active workout UX improvements (reorder exercises, add notes per set)
 - **Research needed:** Yes — evaluate background timer and notification approaches in Expo (expo-notifications, expo-task-manager)
 
-### Phase 9: Streak Tracking & Motivation
+### Phase 9: Streak Tracking & Motivation *(1 plan — 09-01 completed)*
 **Goal:** Gamify consistency with streak counters, workout frequency stats, and personal record celebrations.
 - Workout streak counter (consecutive days/weeks of training)
 - Weekly and monthly workout frequency stats on home/dashboard
@@ -101,4 +101,4 @@ Elevate the workout experience with templates, timers, streaks, and smart remind
 - **Research needed:** Yes — evaluate react-native widget libraries (react-native-android-widget, WidgetKit) and Expo compatibility
 
 ---
-*Last updated: 2026-02-28 — Phase 8 completed*
+*Last updated: 2026-02-28 — Phase 9 completed*
