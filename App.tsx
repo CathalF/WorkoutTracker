@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
+  Platform,
   Pressable,
   StyleSheet,
   Text,
@@ -17,6 +18,7 @@ import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import * as Notifications from 'expo-notifications';
 import * as QuickActions from 'expo-quick-actions';
+import { requestWidgetUpdate } from 'react-native-android-widget';
 import AppNavigator from './src/navigation/AppNavigator';
 import { initializeDatabase } from './src/database';
 import { ThemeProvider, useTheme } from './src/theme';
@@ -102,6 +104,9 @@ export default function App() {
       requestNotificationPermissions();
       syncNotificationSchedules();
       refreshQuickActions();
+      if (Platform.OS === 'android') {
+        requestWidgetUpdate({ widgetName: 'WorkoutWidget' });
+      }
     } catch (error) {
       console.error('Failed to initialize database:', error);
       setInitError(true);

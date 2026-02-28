@@ -3,6 +3,7 @@ import {
   Alert,
   FlatList,
   Modal,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -34,6 +35,7 @@ import {
   getAllExercises,
   searchExercises,
 } from '../database/services';
+import { requestWidgetUpdate } from 'react-native-android-widget';
 import { useTheme, ThemeColors } from '../theme';
 
 type Props = NativeStackScreenProps<WorkoutStackParamList, 'TemplateManagement'>;
@@ -72,6 +74,9 @@ export default function TemplateManagementScreen({ navigation }: Props) {
       if (full) details.push(full);
     }
     setTemplateDetails(details);
+    if (Platform.OS === 'android') {
+      requestWidgetUpdate({ widgetName: 'WorkoutWidget' });
+    }
   }, []);
 
   useFocusEffect(

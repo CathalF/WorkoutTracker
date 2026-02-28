@@ -4,6 +4,7 @@ import {
   Animated,
   Keyboard,
   Modal,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -20,7 +21,9 @@ import { createWorkout, addSet, getExerciseMuscleGroupId, createTemplate, getLas
 import { LastPerformanceSet } from '../types';
 import { useTheme, ThemeColors } from '../theme';
 import useRestTimer from '../hooks/useRestTimer';
+import { requestWidgetUpdate } from 'react-native-android-widget';
 import { scheduleRestNotification, cancelRestNotification, handleWorkoutCompleted } from '../utils/notifications';
+import { refreshQuickActions } from '../utils/quickActions';
 
 type Props = NativeStackScreenProps<WorkoutStackParamList, 'ActiveWorkout'>;
 
@@ -463,6 +466,10 @@ export default function ActiveWorkoutScreen({ navigation, route }: Props) {
 
     savedWorkoutIdRef.current = workoutId;
     handleWorkoutCompleted();
+    if (Platform.OS === 'android') {
+      requestWidgetUpdate({ widgetName: 'WorkoutWidget' });
+    }
+    refreshQuickActions();
 
     Alert.alert('Workout Saved!', 'Great session!', [
       {
