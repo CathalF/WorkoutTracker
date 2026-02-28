@@ -688,16 +688,21 @@ export function saveNotificationPreferences(prefs: NotificationPreferences): voi
 export function getConsecutiveTrainingDays(): number {
   const db = getDatabase();
   const today = new Date();
+  const twoWeeksAgo = new Date(today);
+  twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 13);
+  const startDate = twoWeeksAgo.toISOString().split('T')[0];
+
+  const rows = db.getAllSync<{ date: string }>(
+    'SELECT DISTINCT date FROM workouts WHERE date >= ? ORDER BY date DESC',
+    startDate
+  );
+
   let count = 0;
   for (let i = 0; i < 14; i++) {
-    const date = new Date(today);
-    date.setDate(date.getDate() - i);
-    const dateStr = date.toISOString().split('T')[0];
-    const row = db.getFirstSync<{ count: number }>(
-      'SELECT COUNT(*) as count FROM workouts WHERE date = ?',
-      [dateStr]
-    );
-    if (row && row.count > 0) {
+    const checkDate = new Date(today);
+    checkDate.setDate(checkDate.getDate() - i);
+    const dateStr = checkDate.toISOString().split('T')[0];
+    if (rows.some((r) => r.date === dateStr)) {
       count++;
     } else {
       break;
