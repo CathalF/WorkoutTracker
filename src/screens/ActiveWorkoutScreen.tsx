@@ -209,6 +209,8 @@ export default function ActiveWorkoutScreen({ navigation, route }: Props) {
     const alreadyAddedIds = exercises.map((e) => e.exerciseId);
     navigation.navigate('ExercisePicker', {
       workoutId: -1,
+      muscleGroupId: muscleGroupId || origMuscleGroupIdRef.current,
+      splitLabel: splitLabel || origSplitLabelRef.current,
       muscleGroupIds,
       alreadyAddedIds,
     });

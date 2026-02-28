@@ -82,6 +82,7 @@ export default function ExercisePickerScreen({ navigation, route }: Props) {
   const selectExercise = (exerciseId: number, exerciseName: string) => {
     if (alreadyAddedSet.has(exerciseId)) return;
     navigation.navigate('ActiveWorkout', {
+      ...route.params,
       selectedExercise: { id: exerciseId, name: exerciseName },
     } as any);
   };
