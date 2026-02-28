@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import {
   Alert,
+  Animated,
   Keyboard,
   Modal,
   Pressable,
@@ -12,10 +13,14 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { useKeepAwake } from 'expo-keep-awake';
+import * as Haptics from 'expo-haptics';
 import { WorkoutStackParamList } from '../navigation/WorkoutStackNavigator';
-import { createWorkout, addSet, getExerciseMuscleGroupId, createTemplate, getLastPerformance } from '../database/services';
+import { createWorkout, addSet, getExerciseMuscleGroupId, createTemplate, getLastPerformance, getExerciseRestTime, DEFAULT_REST_SECONDS } from '../database/services';
 import { LastPerformanceSet } from '../types';
 import { useTheme, ThemeColors } from '../theme';
+import useRestTimer from '../hooks/useRestTimer';
+import { scheduleRestNotification, cancelRestNotification } from '../utils/notifications';
 
 type Props = NativeStackScreenProps<WorkoutStackParamList, 'ActiveWorkout'>;
 
@@ -30,7 +35,14 @@ interface ActiveExercise {
   sets: SetEntry[];
 }
 
+function formatTime(seconds: number): string {
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  return `${m}:${s.toString().padStart(2, '0')}`;
+}
+
 export default function ActiveWorkoutScreen({ navigation, route }: Props) {
+  useKeepAwake();
   const colors = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const { muscleGroupId, splitLabel, muscleGroupIds } = route.params;
@@ -41,6 +53,59 @@ export default function ActiveWorkoutScreen({ navigation, route }: Props) {
   const savedWorkoutIdRef = useRef<number | null>(null);
   const [lastPerformance, setLastPerformance] = useState<Map<number, LastPerformanceSet[]>>(new Map());
   const templateInitRef = useRef(false);
+
+  // Set completion tracking
+  const [completedSets, setCompletedSets] = useState<Set<string>>(new Set());
+
+  // Rest time cache per exercise
+  const [restTimes, setRestTimes] = useState<Map<number, number>>(new Map());
+
+  // Timer completion message
+  const [showRestComplete, setShowRestComplete] = useState(false);
+  const restCompleteTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Timer bar animation
+  const timerSlideAnim = useRef(new Animated.Value(100)).current;
+
+  const onTimerComplete = useCallback(() => {
+    cancelRestNotification();
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    setShowRestComplete(true);
+    restCompleteTimeoutRef.current = setTimeout(() => {
+      setShowRestComplete(false);
+    }, 1500);
+  }, []);
+
+  const { secondsRemaining, isRunning, totalDuration, startTimer, stopTimer, adjustTime } = useRestTimer({
+    onComplete: onTimerComplete,
+  });
+
+  // Animate timer bar in/out
+  useEffect(() => {
+    if (isRunning || showRestComplete) {
+      Animated.spring(timerSlideAnim, {
+        toValue: 0,
+        useNativeDriver: true,
+        tension: 80,
+        friction: 12,
+      }).start();
+    } else {
+      Animated.timing(timerSlideAnim, {
+        toValue: 100,
+        duration: 200,
+        useNativeDriver: true,
+      }).start();
+    }
+  }, [isRunning, showRestComplete, timerSlideAnim]);
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (restCompleteTimeoutRef.current) {
+        clearTimeout(restCompleteTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // Initialize from template on mount
   useEffect(() => {
@@ -55,15 +120,18 @@ export default function ActiveWorkoutScreen({ navigation, route }: Props) {
     }));
     setExercises(initialExercises);
 
-    // Fetch previous performance for all template exercises
+    // Fetch previous performance and rest times for all template exercises
     const perfMap = new Map<number, LastPerformanceSet[]>();
+    const rtMap = new Map<number, number>();
     for (const te of fromTemplate.exercises) {
       const perf = getLastPerformance(te.exerciseId);
       if (perf.length > 0) {
         perfMap.set(te.exerciseId, perf);
       }
+      rtMap.set(te.exerciseId, getExerciseRestTime(te.exerciseId));
     }
     setLastPerformance(perfMap);
+    setRestTimes(rtMap);
   }, [route.params.fromTemplate]);
 
   // Detect new exercise selection from ExercisePicker
@@ -86,11 +154,12 @@ export default function ActiveWorkoutScreen({ navigation, route }: Props) {
       },
     ]);
 
-    // Fetch previous performance for newly added exercise
+    // Fetch previous performance and rest time for newly added exercise
     const perf = getLastPerformance(selected.id);
     if (perf.length > 0) {
       setLastPerformance((prev) => new Map(prev).set(selected.id, perf));
     }
+    setRestTimes((prev) => new Map(prev).set(selected.id, getExerciseRestTime(selected.id)));
   }, [route.params.selectedExercise]);
 
   const handleAddExercise = () => {
@@ -121,6 +190,24 @@ export default function ActiveWorkoutScreen({ navigation, route }: Props) {
   };
 
   const removeSet = (exerciseIndex: number, setIndex: number) => {
+    // Remove from completedSets
+    const key = `${exerciseIndex}-${setIndex}`;
+    setCompletedSets((prev) => {
+      const next = new Set(prev);
+      next.delete(key);
+      // Re-index keys for sets after the removed one
+      const updated = new Set<string>();
+      for (const k of next) {
+        const [exI, sI] = k.split('-').map(Number);
+        if (exI === exerciseIndex && sI > setIndex) {
+          updated.add(`${exI}-${sI - 1}`);
+        } else {
+          updated.add(k);
+        }
+      }
+      return updated;
+    });
+
     setExercises((prev) => {
       const updated = [...prev];
       const exercise = { ...updated[exerciseIndex] };
@@ -175,6 +262,44 @@ export default function ActiveWorkoutScreen({ navigation, route }: Props) {
     });
   };
 
+  const toggleSetComplete = (exIdx: number, setIdx: number) => {
+    const key = `${exIdx}-${setIdx}`;
+    if (completedSets.has(key)) {
+      setCompletedSets((prev) => {
+        const next = new Set(prev);
+        next.delete(key);
+        return next;
+      });
+      return;
+    }
+
+    // Validate set has weight and reps
+    const set = exercises[exIdx].sets[setIdx];
+    const w = parseFloat(set.weight) || 0;
+    const r = parseInt(set.reps, 10) || 0;
+    if (w <= 0 || r <= 0) {
+      Alert.alert('Incomplete Set', 'Enter weight and reps first.');
+      return;
+    }
+
+    setCompletedSets((prev) => new Set(prev).add(key));
+
+    // Start rest timer
+    const restSeconds = restTimes.get(exercises[exIdx].exerciseId) ?? DEFAULT_REST_SECONDS;
+    startTimer(restSeconds);
+    scheduleRestNotification(restSeconds);
+  };
+
+  const handleSkipTimer = () => {
+    stopTimer();
+    cancelRestNotification();
+    setShowRestComplete(false);
+    if (restCompleteTimeoutRef.current) {
+      clearTimeout(restCompleteTimeoutRef.current);
+      restCompleteTimeoutRef.current = null;
+    }
+  };
+
   const handleFinishWorkout = () => {
     const hasCompleteSet = exercises.some((ex) =>
       ex.sets.some((s) => {
@@ -187,6 +312,12 @@ export default function ActiveWorkoutScreen({ navigation, route }: Props) {
     if (!hasCompleteSet) {
       Alert.alert('Incomplete Workout', 'Add at least one complete set to save.');
       return;
+    }
+
+    // Stop timer if running
+    if (isRunning) {
+      stopTimer();
+      cancelRestNotification();
     }
 
     const today = new Date().toISOString().split('T')[0];
@@ -263,8 +394,13 @@ export default function ActiveWorkoutScreen({ navigation, route }: Props) {
       {
         text: 'Discard',
         style: 'destructive',
-        onPress: () =>
-          navigation.reset({ index: 0, routes: [{ name: 'StartWorkout' }] }),
+        onPress: () => {
+          if (isRunning) {
+            stopTimer();
+            cancelRestNotification();
+          }
+          navigation.reset({ index: 0, routes: [{ name: 'StartWorkout' }] });
+        },
       },
     ]);
   };
@@ -273,6 +409,8 @@ export default function ActiveWorkoutScreen({ navigation, route }: Props) {
     month: 'short',
     day: 'numeric',
   });
+
+  const timerProgress = totalDuration > 0 ? 1 - secondsRemaining / totalDuration : 0;
 
   return (
     <View style={styles.container}>
@@ -291,7 +429,10 @@ export default function ActiveWorkoutScreen({ navigation, route }: Props) {
 
       <ScrollView
         style={staticStyles.scrollView}
-        contentContainerStyle={staticStyles.scrollContent}
+        contentContainerStyle={[
+          staticStyles.scrollContent,
+          (isRunning || showRestComplete) && { paddingBottom: 120 },
+        ]}
         keyboardShouldPersistTaps="handled"
         onScrollBeginDrag={() => Keyboard.dismiss()}
       >
@@ -319,6 +460,7 @@ export default function ActiveWorkoutScreen({ navigation, route }: Props) {
                 </View>
 
                 <View style={staticStyles.setHeaderRow}>
+                  <View style={{ width: 30 }} />
                   <Text style={styles.setHeaderLabel}>Set</Text>
                   <Text style={styles.setHeaderLabel}>Weight (lb)</Text>
                   <Text style={styles.setHeaderLabel}>Reps</Text>
@@ -326,17 +468,29 @@ export default function ActiveWorkoutScreen({ navigation, route }: Props) {
                 </View>
 
                 {exercise.sets.map((set, setIdx) => {
+                  const key = `${exIdx}-${setIdx}`;
+                  const isComplete = completedSets.has(key);
                   const prevPerf = lastPerformance.get(exercise.exerciseId);
                   const prevSet = prevPerf?.find((p) => p.set_number === setIdx + 1);
                   return (
                     <View key={setIdx}>
-                      <View style={staticStyles.setRow}>
-                        <Text style={styles.setNumber}>{setIdx + 1}</Text>
+                      <View style={[staticStyles.setRow, isComplete && styles.completedSetRow]}>
+                        <Pressable onPress={() => toggleSetComplete(exIdx, setIdx)} hitSlop={6}>
+                          <Ionicons
+                            name={isComplete ? 'checkmark-circle' : 'checkmark-circle-outline'}
+                            size={22}
+                            color={isComplete ? colors.success : colors.textSecondary}
+                          />
+                        </Pressable>
+                        <Text style={[styles.setNumber, isComplete && { color: colors.success }]}>
+                          {setIdx + 1}
+                        </Text>
 
-                        <View style={staticStyles.inputGroup}>
+                        <View style={[staticStyles.inputGroup, isComplete && { opacity: 0.6 }]}>
                           <Pressable
                             style={styles.incrementButton}
                             onPress={() => incrementWeight(exIdx, setIdx, -5)}
+                            disabled={isComplete}
                           >
                             <Text style={styles.incrementText}>-</Text>
                           </Pressable>
@@ -348,19 +502,22 @@ export default function ActiveWorkoutScreen({ navigation, route }: Props) {
                             placeholder="0"
                             placeholderTextColor={colors.textTertiary}
                             selectTextOnFocus
+                            editable={!isComplete}
                           />
                           <Pressable
                             style={styles.incrementButton}
                             onPress={() => incrementWeight(exIdx, setIdx, 5)}
+                            disabled={isComplete}
                           >
                             <Text style={styles.incrementText}>+</Text>
                           </Pressable>
                         </View>
 
-                        <View style={staticStyles.inputGroup}>
+                        <View style={[staticStyles.inputGroup, isComplete && { opacity: 0.6 }]}>
                           <Pressable
                             style={styles.incrementButton}
                             onPress={() => incrementReps(exIdx, setIdx, -1)}
+                            disabled={isComplete}
                           >
                             <Text style={styles.incrementText}>-</Text>
                           </Pressable>
@@ -372,10 +529,12 @@ export default function ActiveWorkoutScreen({ navigation, route }: Props) {
                             placeholder="0"
                             placeholderTextColor={colors.textTertiary}
                             selectTextOnFocus
+                            editable={!isComplete}
                           />
                           <Pressable
                             style={styles.incrementButton}
                             onPress={() => incrementReps(exIdx, setIdx, 1)}
+                            disabled={isComplete}
                           >
                             <Text style={styles.incrementText}>+</Text>
                           </Pressable>
@@ -419,6 +578,53 @@ export default function ActiveWorkoutScreen({ navigation, route }: Props) {
           </>
         )}
       </ScrollView>
+
+      {/* Timer Bar */}
+      <Animated.View
+        style={[
+          styles.timerBar,
+          { transform: [{ translateY: timerSlideAnim }] },
+        ]}
+        pointerEvents={isRunning || showRestComplete ? 'auto' : 'none'}
+      >
+        {/* Progress track */}
+        <View style={styles.timerProgressTrack}>
+          <View style={[styles.timerProgressFill, { width: `${timerProgress * 100}%` }]} />
+        </View>
+
+        {showRestComplete && !isRunning ? (
+          <View style={staticStyles.timerContent}>
+            <Text style={[styles.restCompleteText]}>Rest Complete!</Text>
+          </View>
+        ) : (
+          <View style={staticStyles.timerContent}>
+            <View style={staticStyles.timerTopRow}>
+              <Text style={styles.timerCountdown}>{formatTime(secondsRemaining)}</Text>
+              <Text style={styles.timerLabel}>Resting...</Text>
+            </View>
+            <View style={staticStyles.timerControls}>
+              <Pressable
+                style={styles.timerControlButton}
+                onPress={() => adjustTime(-30)}
+              >
+                <Text style={styles.timerControlText}>-30s</Text>
+              </Pressable>
+              <Pressable
+                style={styles.timerControlButton}
+                onPress={() => adjustTime(30)}
+              >
+                <Text style={styles.timerControlText}>+30s</Text>
+              </Pressable>
+              <Pressable
+                style={styles.timerSkipButton}
+                onPress={handleSkipTimer}
+              >
+                <Text style={styles.timerSkipText}>Skip</Text>
+              </Pressable>
+            </View>
+          </View>
+        )}
+      </Animated.View>
 
       <Modal
         visible={templateModalVisible}
@@ -504,6 +710,7 @@ const staticStyles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 8,
+    gap: 4,
   },
   inputGroup: {
     flexDirection: 'row',
@@ -538,6 +745,20 @@ const staticStyles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: '#fff',
+  },
+  timerContent: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  timerTopRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: 12,
+    marginBottom: 8,
+  },
+  timerControls: {
+    flexDirection: 'row',
+    gap: 10,
   },
 });
 
@@ -616,11 +837,18 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     textAlign: 'center',
   },
   setNumber: {
-    width: 24,
+    width: 20,
     fontSize: 15,
     fontWeight: '600',
     color: colors.textSecondary,
     textAlign: 'center',
+  },
+  completedSetRow: {
+    backgroundColor: colors.success + '10',
+    borderRadius: 8,
+    paddingVertical: 2,
+    paddingHorizontal: 4,
+    marginHorizontal: -4,
   },
   incrementButton: {
     width: 28,
@@ -694,6 +922,65 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     alignItems: 'center',
     marginBottom: 16,
   },
+  // Timer bar styles
+  timerBar: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: colors.surface,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: colors.border,
+  },
+  timerProgressTrack: {
+    height: 3,
+    backgroundColor: colors.separator,
+  },
+  timerProgressFill: {
+    height: 3,
+    backgroundColor: colors.primary,
+  },
+  timerCountdown: {
+    fontSize: 32,
+    fontWeight: '700',
+    color: colors.text,
+  },
+  timerLabel: {
+    fontSize: 13,
+    color: colors.textSecondary,
+  },
+  timerControlButton: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 8,
+    backgroundColor: colors.background,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
+  },
+  timerControlText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.text,
+  },
+  timerSkipButton: {
+    paddingHorizontal: 18,
+    paddingVertical: 8,
+    borderRadius: 8,
+    backgroundColor: colors.primary,
+  },
+  timerSkipText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#fff',
+  },
+  restCompleteText: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: colors.success,
+    textAlign: 'center',
+    paddingVertical: 8,
+  },
+  // Modal styles
   modalOverlay: {
     flex: 1,
     backgroundColor: colors.modalOverlay,
