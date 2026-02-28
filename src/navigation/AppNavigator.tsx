@@ -1,15 +1,17 @@
+import { StyleSheet } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
 import DashboardStackNavigator from './DashboardStackNavigator';
 import WorkoutStackNavigator from './WorkoutStackNavigator';
 import HistoryStackNavigator from './HistoryStackNavigator';
 import ProgressScreen from '../screens/ProgressScreen';
-import { useTheme } from '../theme';
+import { useThemeControl } from '../theme';
 
 const Tab = createBottomTabNavigator();
 
 export default function AppNavigator() {
-  const colors = useTheme();
+  const { colors, isDark } = useThemeControl();
 
   return (
     <Tab.Navigator
@@ -38,6 +40,20 @@ export default function AppNavigator() {
         },
         tabBarActiveTintColor: colors.tabBarActive,
         tabBarInactiveTintColor: colors.tabBarInactive,
+        tabBarStyle: {
+          position: 'absolute',
+          borderTopWidth: StyleSheet.hairlineWidth,
+          borderTopColor: colors.glassBorder,
+          elevation: 0,
+          backgroundColor: 'transparent',
+        },
+        tabBarBackground: () => (
+          <BlurView
+            intensity={80}
+            tint={isDark ? 'dark' : 'light'}
+            style={[StyleSheet.absoluteFill, { backgroundColor: colors.glassSurface }]}
+          />
+        ),
       })}
     >
       <Tab.Screen
