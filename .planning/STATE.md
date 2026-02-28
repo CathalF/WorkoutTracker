@@ -4,7 +4,7 @@
 v2.0 — UX & Engagement
 
 ## Current Phase
-Phase 10: Notifications & Reminders
+Phase 11: Home Screen Widget & Quick Actions
 
 ## Phase Status
 | Phase | Name | Status |
@@ -12,7 +12,7 @@ Phase 10: Notifications & Reminders
 | 7 | Workout Templates & Quick Start | completed |
 | 8 | Rest Timer & Active Workout UX | completed |
 | 9 | Streak Tracking & Motivation | completed |
-| 10 | Notifications & Reminders | not started |
+| 10 | Notifications & Reminders | completed |
 | 11 | Home Screen Widget & Quick Actions | not started |
 
 ## Plan Status
@@ -21,7 +21,7 @@ Phase 10: Notifications & Reminders
 | 7 | 07-01 | completed |
 | 8 | 08-01 | completed |
 | 9 | 09-01 | completed |
-| 10 | — | not started |
+| 10 | 10-01 | completed |
 | 11 | — | not started |
 
 ## Active Issues
@@ -46,6 +46,9 @@ None
 | Exercises tab → Dashboard tab | 2026-02-28 | Replaced Exercises tab with Dashboard as default tab; Exercise Library still accessible via ExercisePicker during workout flow |
 | settings key-value table | 2026-02-28 | Simple key-value store for user preferences (weekly_goal); extensible for future settings |
 | PR detection on set completion | 2026-02-28 | Synchronous PR check against historical sets table in toggleSetComplete(); session deduplication via Set keys |
+| JSON notification_prefs in settings | 2026-02-28 | NotificationPreferences stored as JSON string in settings table under key 'notification_prefs' |
+| DashboardStackNavigator for Settings | 2026-02-28 | Dashboard tab uses a native stack navigator to push Settings screen; gear icon navigates instead of opening a modal |
+| Fire-and-forget notification hooks | 2026-02-28 | handleWorkoutCompleted() called without await after saving workout — notifications are non-critical |
 
 ---
-*Last updated: 2026-02-28 — Phase 9 completed, advancing to Phase 10*
+*Last updated: 2026-02-28 — Phase 10 completed, advancing to Phase 11*
