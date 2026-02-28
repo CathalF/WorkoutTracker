@@ -1,7 +1,8 @@
 # Project State
 
 ## Current Milestone
-None — v2.0 completed, v3.0 not yet planned
+v3.0 — Quality of Life & Visual Refresh (phases 12-17)
+Next phase to plan: 12 — Stability & Performance Audit
 
 ## Completed Milestones
 | Version | Name | Phases | Archive |
@@ -42,4 +43,4 @@ None
 | First set is always a PR | 2026-02-28 | checkForWeightPR/checkForRepsPR return true when no prior data exists — first set for any exercise is a personal record |
 
 ---
-*Last updated: 2026-02-28 — v2.0 milestone archived*
+*Last updated: 2026-02-28 — v3.0 milestone created*
