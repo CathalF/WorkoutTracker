@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Alert,
   Keyboard,
+  Modal,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -12,7 +13,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { WorkoutStackParamList } from '../navigation/WorkoutStackNavigator';
-import { createWorkout, addSet } from '../database/services';
+import { createWorkout, addSet, getExerciseMuscleGroupId, createTemplate } from '../database/services';
 import { useTheme, ThemeColors } from '../theme';
 
 type Props = NativeStackScreenProps<WorkoutStackParamList, 'ActiveWorkout'>;
@@ -34,6 +35,9 @@ export default function ActiveWorkoutScreen({ navigation, route }: Props) {
   const { muscleGroupId, splitLabel, muscleGroupIds } = route.params;
   const [exercises, setExercises] = useState<ActiveExercise[]>([]);
   const lastSelectedRef = useRef<string | null>(null);
+  const [templateModalVisible, setTemplateModalVisible] = useState(false);
+  const [templateName, setTemplateName] = useState('');
+  const savedWorkoutIdRef = useRef<number | null>(null);
 
   // Detect new exercise selection from ExercisePicker
   useEffect(() => {
@@ -153,7 +157,13 @@ export default function ActiveWorkoutScreen({ navigation, route }: Props) {
     }
 
     const today = new Date().toISOString().split('T')[0];
-    const workoutId = createWorkout(today, muscleGroupId);
+    const resolvedMuscleGroupId =
+      muscleGroupId || getExerciseMuscleGroupId(exercises[0].exerciseId);
+    if (!resolvedMuscleGroupId) {
+      Alert.alert('Error', 'Could not determine workout muscle group.');
+      return;
+    }
+    const workoutId = createWorkout(today, resolvedMuscleGroupId);
 
     for (const exercise of exercises) {
       let setNumber = 1;
@@ -167,7 +177,41 @@ export default function ActiveWorkoutScreen({ navigation, route }: Props) {
       }
     }
 
+    savedWorkoutIdRef.current = workoutId;
+
     Alert.alert('Workout Saved!', 'Great session!', [
+      {
+        text: 'Done',
+        onPress: () =>
+          navigation.reset({ index: 0, routes: [{ name: 'StartWorkout' }] }),
+      },
+      {
+        text: 'Save as Template',
+        onPress: () => {
+          setTemplateName(splitLabel);
+          setTemplateModalVisible(true);
+        },
+      },
+    ]);
+  };
+
+  const handleSaveTemplate = () => {
+    const name = templateName.trim();
+    if (!name) return;
+
+    const templateExercises = exercises
+      .filter((ex) => ex.sets.some((s) => (parseFloat(s.weight) || 0) > 0 && (parseInt(s.reps, 10) || 0) > 0))
+      .map((ex) => ({
+        exerciseId: ex.exerciseId,
+        defaultSets: ex.sets.filter((s) => (parseFloat(s.weight) || 0) > 0 && (parseInt(s.reps, 10) || 0) > 0).length,
+      }));
+
+    if (templateExercises.length === 0) return;
+
+    createTemplate(name, muscleGroupId, splitLabel, muscleGroupIds, templateExercises);
+
+    setTemplateModalVisible(false);
+    Alert.alert('Template Saved!', `"${name}" is ready to use.`, [
       {
         text: 'OK',
         onPress: () =>
@@ -331,6 +375,42 @@ export default function ActiveWorkoutScreen({ navigation, route }: Props) {
           </>
         )}
       </ScrollView>
+
+      <Modal
+        visible={templateModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setTemplateModalVisible(false)}
+      >
+        <Pressable style={styles.modalOverlay} onPress={() => setTemplateModalVisible(false)}>
+          <Pressable style={styles.modalContent} onPress={() => {}}>
+            <Text style={styles.modalTitle}>Save as Template</Text>
+            <TextInput
+              style={styles.modalInput}
+              value={templateName}
+              onChangeText={setTemplateName}
+              placeholder="Template name"
+              placeholderTextColor={colors.textTertiary}
+              autoFocus
+              selectTextOnFocus
+            />
+            <View style={staticStyles.modalButtons}>
+              <Pressable
+                style={[styles.modalButton, styles.modalCancelButton]}
+                onPress={() => setTemplateModalVisible(false)}
+              >
+                <Text style={styles.modalCancelText}>Cancel</Text>
+              </Pressable>
+              <Pressable
+                style={[styles.modalButton, styles.modalSaveButton]}
+                onPress={handleSaveTemplate}
+              >
+                <Text style={staticStyles.modalSaveText}>Save</Text>
+              </Pressable>
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </View>
   );
 }
@@ -403,6 +483,16 @@ const staticStyles = StyleSheet.create({
   finishWorkoutButtonText: {
     fontSize: 17,
     fontWeight: '700',
+    color: '#fff',
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 20,
+  },
+  modalSaveText: {
+    fontSize: 16,
+    fontWeight: '600',
     color: '#fff',
   },
 });
@@ -552,5 +642,55 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     paddingVertical: 16,
     alignItems: 'center',
     marginBottom: 16,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: colors.modalOverlay,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 32,
+  },
+  modalContent: {
+    backgroundColor: colors.surface,
+    borderRadius: 14,
+    padding: 24,
+    width: '100%',
+    maxWidth: 340,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: colors.text,
+    textAlign: 'center',
+    marginBottom: 16,
+  },
+  modalInput: {
+    height: 44,
+    borderWidth: 1,
+    borderColor: colors.separator,
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    fontSize: 16,
+    color: colors.text,
+    backgroundColor: colors.background,
+  },
+  modalButton: {
+    flex: 1,
+    borderRadius: 10,
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  modalCancelButton: {
+    backgroundColor: colors.background,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
+  },
+  modalCancelText: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: colors.text,
+  },
+  modalSaveButton: {
+    backgroundColor: colors.primary,
   },
 });
