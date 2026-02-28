@@ -13,6 +13,7 @@ import {
   getTemplateWithExercises,
 } from '../database/services';
 import { useTheme, ThemeColors } from '../theme';
+import { refreshQuickActions } from '../utils/quickActions';
 
 type NavigationProp = NativeStackNavigationProp<WorkoutStackParamList, 'StartWorkout'>;
 
@@ -49,6 +50,7 @@ export default function StartWorkoutScreen() {
       setMuscleGroups(getAllMuscleGroups());
       setTemplates(getAllTemplates());
       setPrograms(getAllPrograms());
+      refreshQuickActions();
     }, [])
   );
 

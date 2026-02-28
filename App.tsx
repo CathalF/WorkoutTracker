@@ -16,11 +16,14 @@ import {
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import * as Notifications from 'expo-notifications';
+import * as QuickActions from 'expo-quick-actions';
 import AppNavigator from './src/navigation/AppNavigator';
 import { initializeDatabase } from './src/database';
 import { ThemeProvider, useTheme } from './src/theme';
 import ErrorBoundary from './src/components/ErrorBoundary';
 import { setupNotificationChannels, syncNotificationSchedules } from './src/utils/notifications';
+import { refreshQuickActions } from './src/utils/quickActions';
+import { handleQuickAction } from './src/utils/quickActionHandler';
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -51,6 +54,19 @@ function AppContent() {
       notification: colors.primary,
     },
   };
+
+  // Handle quick actions when app is already running (warm start)
+  QuickActions.useQuickActionCallback((action) => {
+    handleQuickAction(action);
+  });
+
+  // Handle quick action that launched the app (cold start)
+  useEffect(() => {
+    if (QuickActions.initial) {
+      const timer = setTimeout(() => handleQuickAction(QuickActions.initial!), 300);
+      return () => clearTimeout(timer);
+    }
+  }, []);
 
   const linking = {
     prefixes: ['workouttracker://'],
@@ -85,6 +101,7 @@ export default function App() {
       setIsReady(true);
       requestNotificationPermissions();
       syncNotificationSchedules();
+      refreshQuickActions();
     } catch (error) {
       console.error('Failed to initialize database:', error);
       setInitError(true);
