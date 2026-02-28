@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useState } from 'react';
 import {
+  ActivityIndicator,
   Alert,
   Pressable,
   ScrollView,
@@ -71,12 +72,15 @@ export default function WorkoutDetailScreen({ navigation, route }: Props) {
   const styles = useMemo(() => createStyles(colors), [colors]);
   const { workoutId } = route.params;
   const [workout, setWorkout] = useState<WorkoutDetail | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const [editingCell, setEditingCell] = useState<EditingCell | null>(null);
   const [editValue, setEditValue] = useState('');
 
   const loadData = useCallback(() => {
+    setIsLoading(true);
     const data = getWorkoutWithSets(workoutId);
     setWorkout(data);
+    setIsLoading(false);
   }, [workoutId]);
 
   useFocusEffect(
@@ -144,7 +148,7 @@ export default function WorkoutDetailScreen({ navigation, route }: Props) {
     setEditValue('');
   };
 
-  if (!workout) {
+  if (isLoading || !workout) {
     return (
       <View style={styles.container}>
         <View style={styles.header}>
@@ -157,7 +161,11 @@ export default function WorkoutDetailScreen({ navigation, route }: Props) {
           <View style={staticStyles.headerSide} />
         </View>
         <View style={staticStyles.loadingContainer}>
-          <Text style={styles.loadingText}>Workout not found</Text>
+          {isLoading ? (
+            <ActivityIndicator size="large" color={colors.primary} />
+          ) : (
+            <Text style={styles.loadingText}>Workout not found</Text>
+          )}
         </View>
       </View>
     );
