@@ -8,13 +8,15 @@ import {
   View,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { BlurView } from 'expo-blur';
 import { useNavigation } from '@react-navigation/native';
 import { useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { HistoryStackParamList } from '../navigation/HistoryStackNavigator';
 import { MuscleGroup, WorkoutSummary } from '../types';
 import { getAllMuscleGroups, getWorkouts } from '../database/services';
-import { useTheme, ThemeColors } from '../theme';
+import { useThemeControl, ThemeColors } from '../theme';
+import { GradientBackground } from '../components/glass';
 
 type NavigationProp = NativeStackNavigationProp<HistoryStackParamList, 'HistoryList'>;
 
@@ -99,7 +101,7 @@ function groupByDate(workouts: WorkoutSummary[]): Section[] {
 
 export default function HistoryScreen() {
   const navigation = useNavigation<NavigationProp>();
-  const colors = useTheme();
+  const { colors, isDark } = useThemeControl();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const [workouts, setWorkouts] = useState<WorkoutSummary[]>([]);
   const [muscleGroups, setMuscleGroups] = useState<MuscleGroup[]>([]);
@@ -191,12 +193,16 @@ export default function HistoryScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <GradientBackground>
       <View style={styles.header}>
+        <BlurView intensity={80} tint={isDark ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
+        <View style={[StyleSheet.absoluteFill, { backgroundColor: colors.glassElevated }]} />
         <Text style={styles.title}>History</Text>
       </View>
 
       <View style={styles.filterContainer}>
+        <BlurView intensity={60} tint={isDark ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
+        <View style={[StyleSheet.absoluteFill, { backgroundColor: colors.glassSurface }]} />
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -246,6 +252,7 @@ export default function HistoryScreen() {
         renderSectionHeader={renderSectionHeader}
         renderItem={renderWorkoutCard}
         ListEmptyComponent={renderEmpty}
+        style={staticStyles.sectionList}
         contentContainerStyle={
           sections.length === 0 ? staticStyles.emptyListContent : staticStyles.listContent
         }
@@ -256,7 +263,7 @@ export default function HistoryScreen() {
         maxToRenderPerBatch={15}
         windowSize={5}
       />
-    </View>
+    </GradientBackground>
   );
 }
 
@@ -265,8 +272,11 @@ const staticStyles = StyleSheet.create({
     paddingHorizontal: 16,
     gap: 8,
   },
+  sectionList: {
+    backgroundColor: 'transparent',
+  },
   listContent: {
-    paddingBottom: 20,
+    paddingBottom: 100,
   },
   emptyListContent: {
     flex: 1,
@@ -288,15 +298,10 @@ const staticStyles = StyleSheet.create({
 });
 
 const createStyles = (colors: ThemeColors) => StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
   header: {
     paddingTop: 60,
     paddingHorizontal: 24,
     paddingBottom: 12,
-    backgroundColor: colors.surface,
   },
   title: {
     fontSize: 28,
@@ -304,19 +309,22 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     color: colors.text,
   },
   filterContainer: {
-    backgroundColor: colors.surface,
     paddingBottom: 12,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border,
+    borderBottomColor: colors.glassBorder,
+    overflow: 'hidden',
   },
   filterChip: {
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,
-    backgroundColor: colors.background,
+    backgroundColor: colors.glassSurface,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.glassBorder,
   },
   filterChipSelected: {
     backgroundColor: colors.primary,
+    borderColor: colors.primary,
   },
   filterChipText: {
     fontSize: 14,
@@ -329,7 +337,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   sectionHeader: {
     paddingVertical: 8,
     paddingHorizontal: 24,
-    backgroundColor: colors.background,
+    backgroundColor: 'transparent',
   },
   sectionHeaderText: {
     fontSize: 15,
@@ -338,16 +346,16 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     textTransform: 'uppercase',
   },
   workoutCard: {
-    backgroundColor: colors.surface,
+    backgroundColor: colors.glassSurface,
     marginHorizontal: 16,
     marginVertical: 4,
     borderRadius: 12,
     padding: 16,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
+    borderColor: colors.glassBorder,
   },
   workoutCardPressed: {
-    backgroundColor: colors.pressed,
+    backgroundColor: colors.glassElevated,
   },
   workoutMuscleGroup: {
     fontSize: 17,
