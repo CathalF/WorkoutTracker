@@ -55,7 +55,7 @@ export default function AppNavigator() {
         component={HistoryStackNavigator}
         options={{ headerShown: false }}
       />
-      <Tab.Screen name="Progress" component={ProgressScreen} />
+      <Tab.Screen name="Progress" component={ProgressScreen} options={{ headerShown: false }} />
     </Tab.Navigator>
   );
 }
