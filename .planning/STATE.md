@@ -4,12 +4,12 @@
 v2.0 — UX & Engagement
 
 ## Current Phase
-Phase 7: Workout Templates & Quick Start
+Phase 8: Rest Timer & Active Workout UX
 
 ## Phase Status
 | Phase | Name | Status |
 |-------|------|--------|
-| 7 | Workout Templates & Quick Start | not started |
+| 7 | Workout Templates & Quick Start | completed |
 | 8 | Rest Timer & Active Workout UX | not started |
 | 9 | Streak Tracking & Motivation | not started |
 | 10 | Notifications & Reminders | not started |
@@ -18,7 +18,7 @@ Phase 7: Workout Templates & Quick Start
 ## Plan Status
 | Phase | Plan | Status |
 |-------|------|--------|
-| 7 | — | not started |
+| 7 | 07-01 | completed |
 | 8 | — | not started |
 | 9 | — | not started |
 | 10 | — | not started |
@@ -38,6 +38,8 @@ None
 | Delete icon over swipe-to-delete | 2026-02-16 | Used explicit delete icon on set rows instead of swipe gesture for simpler implementation |
 | react-native-gifted-charts | 2026-02-18 | Chosen for zero native modules, Expo Go compatible, built-in tooltips and area charts |
 | Static colors for ErrorBoundary | 2026-02-28 | ErrorBoundary uses hardcoded colors since it wraps ThemeProvider and cannot use useTheme() |
+| JSON for muscle_group_ids | 2026-02-28 | Template muscle_group_ids stored as JSON string in SQLite, parsed on read |
+| Inline exercise picker for management | 2026-02-28 | TemplateManagement uses its own modal exercise picker instead of navigating to ExercisePicker screen |
 
 ---
-*Last updated: 2026-02-28 — v2.0 milestone created, starting Phase 7*
+*Last updated: 2026-02-28 — Phase 7 completed, advancing to Phase 8*

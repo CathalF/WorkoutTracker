@@ -60,12 +60,13 @@ Ship a local-first mobile app that replaces the notes-app workflow with structur
 
 Elevate the workout experience with templates, timers, streaks, and smart reminders — making the app a daily habit, not just a logging tool.
 
-### Phase 7: Workout Templates & Quick Start
+### Phase 7: Workout Templates & Quick Start *(1 plan — 07-01 completed)*
 **Goal:** Users can save workouts as reusable templates and start new sessions from them with one tap.
 - Save completed workout as a template (name, exercises, default sets/reps/weight)
 - Quick-start workout from template (pre-fills exercises and sets)
 - Template management screen (rename, edit, delete templates)
-- Template suggestions on the Log Workout screen
+- Program grouping for templates
+- Previous performance reference when starting from template
 - **Research needed:** No
 
 ### Phase 8: Rest Timer & Active Workout UX
@@ -100,4 +101,4 @@ Elevate the workout experience with templates, timers, streaks, and smart remind
 - **Research needed:** Yes — evaluate react-native widget libraries (react-native-android-widget, WidgetKit) and Expo compatibility
 
 ---
-*Last updated: 2026-02-28 — v2.0 milestone defined*
+*Last updated: 2026-02-28 — Phase 7 completed*
