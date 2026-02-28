@@ -369,6 +369,9 @@ export default function ProgressScreen() {
                 </Pressable>
               )}
               ItemSeparatorComponent={() => <View style={styles.separator} />}
+              removeClippedSubviews={true}
+              maxToRenderPerBatch={15}
+              windowSize={5}
             />
           </View>
         </View>

@@ -170,6 +170,9 @@ export default function ExercisePickerScreen({ navigation, route }: Props) {
           }
           contentContainerStyle={searchResults.length === 0 ? staticStyles.emptyListContent : staticStyles.listContent}
           keyboardShouldPersistTaps="handled"
+          removeClippedSubviews={true}
+          maxToRenderPerBatch={15}
+          windowSize={5}
         />
       ) : (
         <SectionList
@@ -184,6 +187,9 @@ export default function ExercisePickerScreen({ navigation, route }: Props) {
           stickySectionHeadersEnabled={false}
           contentContainerStyle={staticStyles.listContent}
           keyboardShouldPersistTaps="handled"
+          removeClippedSubviews={true}
+          maxToRenderPerBatch={15}
+          windowSize={5}
         />
       )}
     </View>

@@ -254,6 +254,9 @@ export default function ExerciseLibraryScreen({ navigation }: { navigation: any 
           renderItem={renderSearchItem}
           ListEmptyComponent={renderEmptySearch}
           contentContainerStyle={searchResults.length === 0 ? staticStyles.emptyListContent : staticStyles.listContent}
+          removeClippedSubviews={true}
+          maxToRenderPerBatch={15}
+          windowSize={5}
         />
       ) : (
         <SectionList
@@ -263,6 +266,9 @@ export default function ExerciseLibraryScreen({ navigation }: { navigation: any 
           renderItem={renderSectionItem}
           stickySectionHeadersEnabled={false}
           contentContainerStyle={staticStyles.listContent}
+          removeClippedSubviews={true}
+          maxToRenderPerBatch={15}
+          windowSize={5}
         />
       )}
 

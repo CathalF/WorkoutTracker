@@ -145,13 +145,13 @@ export default function HistoryScreen() {
       ? muscleGroups.find((mg) => mg.id === selectedFilterId)?.name ?? ''
       : '';
 
-  const renderSectionHeader = ({ section }: { section: Section }) => (
+  const renderSectionHeader = useCallback(({ section }: { section: Section }) => (
     <View style={styles.sectionHeader}>
       <Text style={styles.sectionHeaderText}>{section.title}</Text>
     </View>
-  );
+  ), [styles]);
 
-  const renderWorkoutCard = ({ item }: { item: WorkoutSummary }) => (
+  const renderWorkoutCard = useCallback(({ item }: { item: WorkoutSummary }) => (
     <Pressable
       style={({ pressed }) => [styles.workoutCard, pressed && styles.workoutCardPressed]}
       onPress={() => handleWorkoutPress(item.id)}
@@ -169,7 +169,7 @@ export default function HistoryScreen() {
         <Ionicons name="chevron-forward" size={20} color={colors.textTertiary} />
       </View>
     </Pressable>
-  );
+  ), [styles, colors.textTertiary]);
 
   const renderEmpty = () => {
     if (selectedFilterId !== null) {
@@ -257,6 +257,9 @@ export default function HistoryScreen() {
         stickySectionHeadersEnabled={false}
         refreshing={refreshing}
         onRefresh={handleRefresh}
+        removeClippedSubviews={true}
+        maxToRenderPerBatch={15}
+        windowSize={5}
       />
     </View>
   );

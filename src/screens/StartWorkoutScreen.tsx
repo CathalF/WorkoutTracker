@@ -87,6 +87,9 @@ export default function StartWorkoutScreen() {
         numColumns={2}
         columnWrapperStyle={styles.row}
         contentContainerStyle={styles.grid}
+        removeClippedSubviews={true}
+        maxToRenderPerBatch={15}
+        windowSize={5}
       />
     </View>
   );
