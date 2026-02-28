@@ -11,6 +11,11 @@ import {
   ExerciseVolumePoint,
   PersonalRecord,
   VolumeRecord,
+  Program,
+  WorkoutTemplate,
+  TemplateExercise,
+  TemplateWithExercises,
+  LastPerformanceSet,
 } from '../types';
 
 export function getAllMuscleGroups(): MuscleGroup[] {
@@ -65,6 +70,15 @@ export function deleteCustomExercise(exerciseId: number): void {
     'DELETE FROM exercises WHERE id = ? AND is_custom = 1',
     exerciseId
   );
+}
+
+export function getExerciseMuscleGroupId(exerciseId: number): number | null {
+  const db = getDatabase();
+  const row = db.getFirstSync<{ muscle_group_id: number }>(
+    'SELECT muscle_group_id FROM exercises WHERE id = ?',
+    exerciseId
+  );
+  return row?.muscle_group_id ?? null;
 }
 
 export function createWorkout(date: string, muscleGroupId: number, notes?: string): number {
@@ -284,4 +298,165 @@ export function getPersonalRecords(exerciseId: number): { maxWeight: PersonalRec
   ) ?? null;
 
   return { maxWeight, maxVolume };
+}
+
+// --- Programs ---
+
+export function createProgram(name: string): number {
+  const db = getDatabase();
+  const result = db.runSync('INSERT INTO programs (name) VALUES (?)', name);
+  return result.lastInsertRowId;
+}
+
+export function getAllPrograms(): Program[] {
+  const db = getDatabase();
+  return db.getAllSync<Program>('SELECT id, name, created_at FROM programs ORDER BY name');
+}
+
+export function renameProgram(programId: number, name: string): void {
+  const db = getDatabase();
+  db.runSync('UPDATE programs SET name = ? WHERE id = ?', name, programId);
+}
+
+export function deleteProgram(programId: number): void {
+  const db = getDatabase();
+  db.runSync('DELETE FROM programs WHERE id = ?', programId);
+}
+
+// --- Templates ---
+
+export function createTemplate(
+  name: string,
+  muscleGroupId: number,
+  splitLabel: string,
+  muscleGroupIds: number[],
+  exercises: { exerciseId: number; defaultSets: number }[],
+  programId?: number
+): number {
+  const db = getDatabase();
+  const result = db.runSync(
+    'INSERT INTO workout_templates (name, muscle_group_id, split_label, muscle_group_ids, program_id) VALUES (?, ?, ?, ?, ?)',
+    name,
+    muscleGroupId,
+    splitLabel,
+    JSON.stringify(muscleGroupIds),
+    programId ?? null
+  );
+  const templateId = result.lastInsertRowId;
+
+  for (let i = 0; i < exercises.length; i++) {
+    db.runSync(
+      'INSERT INTO template_exercises (template_id, exercise_id, sort_order, default_sets) VALUES (?, ?, ?, ?)',
+      templateId,
+      exercises[i].exerciseId,
+      i,
+      exercises[i].defaultSets
+    );
+  }
+
+  return templateId;
+}
+
+export function getAllTemplates(): WorkoutTemplate[] {
+  const db = getDatabase();
+  const rows = db.getAllSync<Omit<WorkoutTemplate, 'muscle_group_ids'> & { muscle_group_ids: string }>(
+    'SELECT id, name, muscle_group_id, split_label, muscle_group_ids, program_id, sort_order, created_at FROM workout_templates ORDER BY sort_order, created_at'
+  );
+  return rows.map((row) => ({
+    ...row,
+    muscle_group_ids: JSON.parse(row.muscle_group_ids) as number[],
+  }));
+}
+
+export function getTemplateWithExercises(templateId: number): TemplateWithExercises | null {
+  const db = getDatabase();
+  const row = db.getFirstSync<Omit<WorkoutTemplate, 'muscle_group_ids'> & { muscle_group_ids: string }>(
+    'SELECT id, name, muscle_group_id, split_label, muscle_group_ids, program_id, sort_order, created_at FROM workout_templates WHERE id = ?',
+    templateId
+  );
+  if (!row) return null;
+
+  const exercises = db.getAllSync<TemplateExercise>(
+    `SELECT te.id, te.template_id, te.exercise_id, e.name AS exercise_name, te.sort_order, te.default_sets
+     FROM template_exercises te
+     JOIN exercises e ON te.exercise_id = e.id
+     WHERE te.template_id = ?
+     ORDER BY te.sort_order`,
+    templateId
+  );
+
+  return {
+    ...row,
+    muscle_group_ids: JSON.parse(row.muscle_group_ids) as number[],
+    exercises,
+  };
+}
+
+export function renameTemplate(templateId: number, name: string): void {
+  const db = getDatabase();
+  db.runSync('UPDATE workout_templates SET name = ? WHERE id = ?', name, templateId);
+}
+
+export function deleteTemplate(templateId: number): void {
+  const db = getDatabase();
+  db.runSync('DELETE FROM workout_templates WHERE id = ?', templateId);
+}
+
+export function assignTemplateToProgram(templateId: number, programId: number | null): void {
+  const db = getDatabase();
+  db.runSync('UPDATE workout_templates SET program_id = ? WHERE id = ?', programId, templateId);
+}
+
+export function updateTemplateSortOrder(templateId: number, sortOrder: number): void {
+  const db = getDatabase();
+  db.runSync('UPDATE workout_templates SET sort_order = ? WHERE id = ?', sortOrder, templateId);
+}
+
+// --- Template exercises ---
+
+export function addTemplateExercise(
+  templateId: number,
+  exerciseId: number,
+  sortOrder: number,
+  defaultSets: number
+): number {
+  const db = getDatabase();
+  const result = db.runSync(
+    'INSERT INTO template_exercises (template_id, exercise_id, sort_order, default_sets) VALUES (?, ?, ?, ?)',
+    templateId,
+    exerciseId,
+    sortOrder,
+    defaultSets
+  );
+  return result.lastInsertRowId;
+}
+
+export function removeTemplateExercise(templateExerciseId: number): void {
+  const db = getDatabase();
+  db.runSync('DELETE FROM template_exercises WHERE id = ?', templateExerciseId);
+}
+
+export function updateTemplateExerciseDefaultSets(templateExerciseId: number, defaultSets: number): void {
+  const db = getDatabase();
+  db.runSync('UPDATE template_exercises SET default_sets = ? WHERE id = ?', defaultSets, templateExerciseId);
+}
+
+// --- Previous performance ---
+
+export function getLastPerformance(exerciseId: number): LastPerformanceSet[] {
+  const db = getDatabase();
+  return db.getAllSync<LastPerformanceSet>(
+    `SELECT s.set_number, s.weight, s.reps
+     FROM sets s
+     WHERE s.exercise_id = ? AND s.workout_id = (
+       SELECT s2.workout_id FROM sets s2
+       JOIN workouts w ON s2.workout_id = w.id
+       WHERE s2.exercise_id = ?
+       ORDER BY w.date DESC, w.created_at DESC
+       LIMIT 1
+     )
+     ORDER BY s.set_number`,
+    exerciseId,
+    exerciseId
+  );
 }

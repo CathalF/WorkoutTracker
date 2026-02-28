@@ -56,4 +56,39 @@ function initializeSchema(database: SQLiteDatabase): void {
       FOREIGN KEY (exercise_id) REFERENCES exercises(id)
     );
   `);
+
+  database.execSync(`
+    CREATE TABLE IF NOT EXISTS programs (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+  `);
+
+  database.execSync(`
+    CREATE TABLE IF NOT EXISTS workout_templates (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      muscle_group_id INTEGER NOT NULL,
+      split_label TEXT NOT NULL,
+      muscle_group_ids TEXT NOT NULL,
+      program_id INTEGER,
+      sort_order INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      FOREIGN KEY (muscle_group_id) REFERENCES muscle_groups(id),
+      FOREIGN KEY (program_id) REFERENCES programs(id) ON DELETE SET NULL
+    );
+  `);
+
+  database.execSync(`
+    CREATE TABLE IF NOT EXISTS template_exercises (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      template_id INTEGER NOT NULL,
+      exercise_id INTEGER NOT NULL,
+      sort_order INTEGER NOT NULL,
+      default_sets INTEGER NOT NULL DEFAULT 3,
+      FOREIGN KEY (template_id) REFERENCES workout_templates(id) ON DELETE CASCADE,
+      FOREIGN KEY (exercise_id) REFERENCES exercises(id)
+    );
+  `);
 }

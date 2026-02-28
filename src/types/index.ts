@@ -78,3 +78,39 @@ export interface LoggedExercise {
   name: string;
   muscle_group_name: string;
 }
+
+export interface Program {
+  id: number;
+  name: string;
+  created_at: string;
+}
+
+export interface WorkoutTemplate {
+  id: number;
+  name: string;
+  muscle_group_id: number;
+  split_label: string;
+  muscle_group_ids: number[];
+  program_id: number | null;
+  sort_order: number;
+  created_at: string;
+}
+
+export interface TemplateExercise {
+  id: number;
+  template_id: number;
+  exercise_id: number;
+  exercise_name: string;
+  sort_order: number;
+  default_sets: number;
+}
+
+export interface TemplateWithExercises extends WorkoutTemplate {
+  exercises: TemplateExercise[];
+}
+
+export interface LastPerformanceSet {
+  set_number: number;
+  weight: number;
+  reps: number;
+}
