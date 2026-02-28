@@ -16,7 +16,7 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useKeepAwake } from 'expo-keep-awake';
 import * as Haptics from 'expo-haptics';
 import { WorkoutStackParamList } from '../navigation/WorkoutStackNavigator';
-import { createWorkout, addSet, getExerciseMuscleGroupId, createTemplate, getLastPerformance, getExerciseRestTime, DEFAULT_REST_SECONDS } from '../database/services';
+import { createWorkout, addSet, getExerciseMuscleGroupId, createTemplate, getLastPerformance, getExerciseRestTime, setExerciseRestTime, clearExerciseRestTime, DEFAULT_REST_SECONDS } from '../database/services';
 import { LastPerformanceSet } from '../types';
 import { useTheme, ThemeColors } from '../theme';
 import useRestTimer from '../hooks/useRestTimer';
@@ -63,6 +63,10 @@ export default function ActiveWorkoutScreen({ navigation, route }: Props) {
   // Timer completion message
   const [showRestComplete, setShowRestComplete] = useState(false);
   const restCompleteTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Rest time modal state
+  const [restTimeModalExercise, setRestTimeModalExercise] = useState<{ index: number; id: number; name: string } | null>(null);
+  const [restTimeModalValue, setRestTimeModalValue] = useState(DEFAULT_REST_SECONDS);
 
   // Timer bar animation
   const timerSlideAnim = useRef(new Animated.Value(100)).current;
@@ -300,6 +304,27 @@ export default function ActiveWorkoutScreen({ navigation, route }: Props) {
     }
   };
 
+  const openRestTimeModal = (exIdx: number) => {
+    const ex = exercises[exIdx];
+    const currentRest = restTimes.get(ex.exerciseId) ?? DEFAULT_REST_SECONDS;
+    setRestTimeModalExercise({ index: exIdx, id: ex.exerciseId, name: ex.exerciseName });
+    setRestTimeModalValue(currentRest);
+  };
+
+  const handleSaveRestTime = () => {
+    if (!restTimeModalExercise) return;
+    setExerciseRestTime(restTimeModalExercise.id, restTimeModalValue);
+    setRestTimes((prev) => new Map(prev).set(restTimeModalExercise.id, restTimeModalValue));
+    setRestTimeModalExercise(null);
+  };
+
+  const handleClearRestTime = () => {
+    if (!restTimeModalExercise) return;
+    clearExerciseRestTime(restTimeModalExercise.id);
+    setRestTimes((prev) => new Map(prev).set(restTimeModalExercise.id, DEFAULT_REST_SECONDS));
+    setRestTimeModalValue(DEFAULT_REST_SECONDS);
+  };
+
   const handleFinishWorkout = () => {
     const hasCompleteSet = exercises.some((ex) =>
       ex.sets.some((s) => {
@@ -453,10 +478,20 @@ export default function ActiveWorkoutScreen({ navigation, route }: Props) {
             {exercises.map((exercise, exIdx) => (
               <View key={exercise.exerciseId} style={styles.exerciseCard}>
                 <View style={staticStyles.exerciseHeader}>
-                  <Text style={styles.exerciseTitle}>{exercise.exerciseName}</Text>
-                  <Pressable onPress={() => removeExercise(exIdx)} hitSlop={8}>
-                    <Ionicons name="close-circle" size={22} color={colors.destructive} />
-                  </Pressable>
+                  <View style={staticStyles.exerciseTitleRow}>
+                    <Text style={styles.exerciseTitle}>{exercise.exerciseName}</Text>
+                    <Text style={styles.restTimeLabel}>
+                      Rest: {formatTime(restTimes.get(exercise.exerciseId) ?? DEFAULT_REST_SECONDS)}
+                    </Text>
+                  </View>
+                  <View style={staticStyles.exerciseActions}>
+                    <Pressable onPress={() => openRestTimeModal(exIdx)} hitSlop={8}>
+                      <Ionicons name="timer-outline" size={18} color={colors.textSecondary} />
+                    </Pressable>
+                    <Pressable onPress={() => removeExercise(exIdx)} hitSlop={8}>
+                      <Ionicons name="close-circle" size={22} color={colors.destructive} />
+                    </Pressable>
+                  </View>
                 </View>
 
                 <View style={staticStyles.setHeaderRow}>
@@ -626,6 +661,85 @@ export default function ActiveWorkoutScreen({ navigation, route }: Props) {
         )}
       </Animated.View>
 
+      {/* Rest Time Settings Modal */}
+      <Modal
+        visible={restTimeModalExercise !== null}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setRestTimeModalExercise(null)}
+      >
+        <Pressable style={styles.modalOverlay} onPress={() => setRestTimeModalExercise(null)}>
+          <Pressable style={styles.modalContent} onPress={() => {}}>
+            <Text style={styles.modalTitle}>
+              Rest Time
+            </Text>
+            <Text style={styles.restTimeModalSubtitle} numberOfLines={1}>
+              {restTimeModalExercise?.name}
+            </Text>
+
+            <Text style={styles.restTimeModalDisplay}>
+              {formatTime(restTimeModalValue)}
+            </Text>
+
+            <View style={staticStyles.restTimePresets}>
+              {[30, 60, 90, 120, 180, 300].map((s) => (
+                <Pressable
+                  key={s}
+                  style={[
+                    styles.restTimePresetButton,
+                    restTimeModalValue === s && styles.restTimePresetActive,
+                  ]}
+                  onPress={() => setRestTimeModalValue(s)}
+                >
+                  <Text
+                    style={[
+                      styles.restTimePresetText,
+                      restTimeModalValue === s && styles.restTimePresetTextActive,
+                    ]}
+                  >
+                    {formatTime(s)}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+
+            <View style={staticStyles.restTimeAdjust}>
+              <Pressable
+                style={styles.restTimeAdjustButton}
+                onPress={() => setRestTimeModalValue((v) => Math.max(15, v - 15))}
+              >
+                <Text style={styles.timerControlText}>-15s</Text>
+              </Pressable>
+              <Pressable
+                style={styles.restTimeAdjustButton}
+                onPress={() => setRestTimeModalValue((v) => v + 15)}
+              >
+                <Text style={styles.timerControlText}>+15s</Text>
+              </Pressable>
+            </View>
+
+            <Pressable onPress={handleClearRestTime}>
+              <Text style={styles.restTimeDefaultLink}>Use Default ({formatTime(DEFAULT_REST_SECONDS)})</Text>
+            </Pressable>
+
+            <View style={staticStyles.modalButtons}>
+              <Pressable
+                style={[styles.modalButton, styles.modalCancelButton]}
+                onPress={() => setRestTimeModalExercise(null)}
+              >
+                <Text style={styles.modalCancelText}>Cancel</Text>
+              </Pressable>
+              <Pressable
+                style={[styles.modalButton, styles.modalSaveButton]}
+                onPress={handleSaveRestTime}
+              >
+                <Text style={staticStyles.modalSaveText}>Save</Text>
+              </Pressable>
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
+
       <Modal
         visible={templateModalVisible}
         transparent
@@ -700,6 +814,15 @@ const staticStyles = StyleSheet.create({
     justifyContent: 'space-between',
     marginBottom: 12,
   },
+  exerciseTitleRow: {
+    flex: 1,
+    marginRight: 8,
+  },
+  exerciseActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
   setHeaderRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -759,6 +882,19 @@ const staticStyles = StyleSheet.create({
   timerControls: {
     flexDirection: 'row',
     gap: 10,
+  },
+  restTimePresets: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    justifyContent: 'center',
+    marginBottom: 12,
+  },
+  restTimeAdjust: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 12,
+    marginBottom: 12,
   },
 });
 
@@ -826,7 +962,11 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     fontSize: 17,
     fontWeight: '600',
     color: colors.text,
-    flex: 1,
+  },
+  restTimeLabel: {
+    fontSize: 12,
+    color: colors.textTertiary,
+    marginTop: 2,
   },
   setHeaderLabel: {
     fontSize: 12,
@@ -979,6 +1119,54 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     color: colors.success,
     textAlign: 'center',
     paddingVertical: 8,
+  },
+  // Rest time modal styles
+  restTimeModalSubtitle: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    marginBottom: 16,
+  },
+  restTimeModalDisplay: {
+    fontSize: 36,
+    fontWeight: '700',
+    color: colors.text,
+    textAlign: 'center',
+    marginBottom: 16,
+  },
+  restTimePresetButton: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 8,
+    backgroundColor: colors.background,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
+  },
+  restTimePresetActive: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+  },
+  restTimePresetText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.text,
+  },
+  restTimePresetTextActive: {
+    color: '#fff',
+  },
+  restTimeAdjustButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
+    backgroundColor: colors.background,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
+  },
+  restTimeDefaultLink: {
+    fontSize: 14,
+    color: colors.primary,
+    textAlign: 'center',
+    marginBottom: 4,
   },
   // Modal styles
   modalOverlay: {
