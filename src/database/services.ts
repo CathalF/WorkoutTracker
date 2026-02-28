@@ -495,7 +495,7 @@ export function checkForWeightPR(exerciseId: number, weight: number, _reps: numb
     'SELECT MAX(weight) as max_weight FROM sets WHERE exercise_id = ?',
     exerciseId
   );
-  if (row?.max_weight === null || row?.max_weight === undefined) return false;
+  if (row?.max_weight === null || row?.max_weight === undefined) return true;
   return weight > row.max_weight;
 }
 
@@ -506,7 +506,7 @@ export function checkForRepsPR(exerciseId: number, weight: number, reps: number)
     exerciseId,
     weight
   );
-  if (row?.max_reps === null || row?.max_reps === undefined) return false;
+  if (row?.max_reps === null || row?.max_reps === undefined) return true;
   return reps > row.max_reps;
 }
 
