@@ -26,6 +26,7 @@ import {
 } from '../utils/notifications';
 import { useThemeControl, ThemeColors } from '../theme';
 import { GradientBackground } from '../components/glass';
+import { useAuth } from '../contexts/AuthContext';
 
 const DAY_LABELS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 // Maps display index (0=Sun..6=Sat) to expo weekday (1=Sun..7=Sat)
@@ -40,6 +41,7 @@ function formatTime(hour: number, minute: number): string {
 export default function SettingsScreen() {
   const navigation = useNavigation();
   const { colors, isDark } = useThemeControl();
+  const { signOut, user } = useAuth();
   const styles = useMemo(() => createStyles(colors), [colors]);
 
   const [weeklyGoal, setWeeklyGoal] = useState(3);
@@ -278,6 +280,21 @@ export default function SettingsScreen() {
             </View>
           </>
         )}
+
+        {/* Account Section */}
+        <Text style={styles.sectionLabel}>ACCOUNT</Text>
+        {user?.email && (
+          <View style={styles.settingCard}>
+            <Text style={styles.settingLabel}>{user.email}</Text>
+          </View>
+        )}
+        <Pressable
+          style={({ pressed }) => [styles.settingCard, pressed && staticStyles.pressed]}
+          onPress={signOut}
+        >
+          <Text style={styles.signOutText}>Sign Out</Text>
+          <Ionicons name="log-out-outline" size={20} color={colors.destructive} />
+        </Pressable>
       </ScrollView>
     </GradientBackground>
   );
@@ -299,6 +316,9 @@ const staticStyles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     gap: 8,
+  },
+  pressed: {
+    opacity: 0.7,
   },
 });
 
@@ -417,5 +437,10 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   },
   optionButtonTextActive: {
     color: '#fff',
+  },
+  signOutText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.destructive,
   },
 });
