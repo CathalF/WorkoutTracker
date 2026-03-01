@@ -29,7 +29,7 @@ export function getAllMuscleGroups(): MuscleGroup[] {
 export function getExercisesByMuscleGroup(muscleGroupId: number): Exercise[] {
   const db = getDatabase();
   return db.getAllSync<Exercise>(
-    'SELECT id, name, muscle_group_id, is_custom FROM exercises WHERE muscle_group_id = ? ORDER BY name',
+    'SELECT id, name, muscle_group_id, is_custom FROM exercises WHERE muscle_group_id = ? AND deleted_at IS NULL ORDER BY name',
     muscleGroupId
   );
 }
@@ -40,6 +40,7 @@ export function getAllExercises(): ExerciseWithMuscleGroup[] {
     `SELECT e.id, e.name, e.muscle_group_id, e.is_custom, mg.name AS muscle_group_name
      FROM exercises e
      JOIN muscle_groups mg ON e.muscle_group_id = mg.id
+     WHERE e.deleted_at IS NULL
      ORDER BY mg.name, e.name`
   );
 }
@@ -51,7 +52,7 @@ export function searchExercises(query: string): ExerciseWithMuscleGroup[] {
     `SELECT e.id, e.name, e.muscle_group_id, e.is_custom, mg.name AS muscle_group_name
      FROM exercises e
      JOIN muscle_groups mg ON e.muscle_group_id = mg.id
-     WHERE e.name LIKE ? COLLATE NOCASE
+     WHERE e.name LIKE ? COLLATE NOCASE AND e.deleted_at IS NULL
      ORDER BY mg.name, e.name`,
     pattern
   );
@@ -60,7 +61,7 @@ export function searchExercises(query: string): ExerciseWithMuscleGroup[] {
 export function addCustomExercise(name: string, muscleGroupId: number): number {
   const db = getDatabase();
   const result = db.runSync(
-    'INSERT INTO exercises (name, muscle_group_id, is_custom) VALUES (?, ?, 1)',
+    'INSERT INTO exercises (name, muscle_group_id, is_custom, updated_at) VALUES (?, ?, 1, datetime(\'now\'))',
     name,
     muscleGroupId
   );
@@ -70,7 +71,7 @@ export function addCustomExercise(name: string, muscleGroupId: number): number {
 export function deleteCustomExercise(exerciseId: number): void {
   const db = getDatabase();
   db.runSync(
-    'DELETE FROM exercises WHERE id = ? AND is_custom = 1',
+    'UPDATE exercises SET deleted_at = datetime(\'now\'), updated_at = datetime(\'now\') WHERE id = ? AND is_custom = 1',
     exerciseId
   );
 }
@@ -87,7 +88,7 @@ export function getExerciseMuscleGroupId(exerciseId: number): number | null {
 export function createWorkout(date: string, muscleGroupId: number, notes?: string): number {
   const db = getDatabase();
   const result = db.runSync(
-    'INSERT INTO workouts (date, muscle_group_id, notes) VALUES (?, ?, ?)',
+    'INSERT INTO workouts (date, muscle_group_id, notes, updated_at) VALUES (?, ?, ?, datetime(\'now\'))',
     date,
     muscleGroupId,
     notes ?? null
@@ -104,7 +105,7 @@ export function addSet(
 ): number {
   const db = getDatabase();
   const result = db.runSync(
-    'INSERT INTO sets (workout_id, exercise_id, set_number, weight, reps) VALUES (?, ?, ?, ?, ?)',
+    'INSERT INTO sets (workout_id, exercise_id, set_number, weight, reps, created_at, updated_at) VALUES (?, ?, ?, ?, ?, datetime(\'now\'), datetime(\'now\'))',
     workoutId,
     exerciseId,
     setNumber,
@@ -138,7 +139,7 @@ export function getWorkoutWithSets(workoutId: number): WorkoutDetail | null {
     `SELECT s.*, e.name AS exercise_name
      FROM sets s
      JOIN exercises e ON s.exercise_id = e.id
-     WHERE s.workout_id = ?
+     WHERE s.workout_id = ? AND s.deleted_at IS NULL
      ORDER BY e.name, s.set_number`,
     workoutId
   );
@@ -170,7 +171,8 @@ export function getWorkoutWithSets(workoutId: number): WorkoutDetail | null {
 
 export function deleteWorkout(workoutId: number): void {
   const db = getDatabase();
-  db.runSync('DELETE FROM workouts WHERE id = ?', workoutId);
+  db.runSync('UPDATE sets SET deleted_at = datetime(\'now\'), updated_at = datetime(\'now\') WHERE workout_id = ? AND deleted_at IS NULL', workoutId);
+  db.runSync('UPDATE workouts SET deleted_at = datetime(\'now\'), updated_at = datetime(\'now\') WHERE id = ?', workoutId);
 }
 
 export function getWorkouts(muscleGroupId?: number): WorkoutSummary[] {
@@ -186,12 +188,13 @@ export function getWorkouts(muscleGroupId?: number): WorkoutSummary[] {
       w.created_at
     FROM workouts w
     JOIN muscle_groups mg ON w.muscle_group_id = mg.id
-    LEFT JOIN sets s ON s.workout_id = w.id
+    LEFT JOIN sets s ON s.workout_id = w.id AND s.deleted_at IS NULL
+    WHERE w.deleted_at IS NULL
   `;
 
   if (muscleGroupId !== undefined) {
     return db.getAllSync<WorkoutSummary>(
-      baseQuery + ' WHERE w.muscle_group_id = ? GROUP BY w.id ORDER BY w.date DESC, w.created_at DESC',
+      baseQuery + ' AND w.muscle_group_id = ? GROUP BY w.id ORDER BY w.date DESC, w.created_at DESC',
       muscleGroupId
     );
   }
@@ -204,7 +207,7 @@ export function getWorkouts(muscleGroupId?: number): WorkoutSummary[] {
 export function updateSet(setId: number, weight: number, reps: number): void {
   const db = getDatabase();
   db.runSync(
-    'UPDATE sets SET weight = ?, reps = ? WHERE id = ?',
+    'UPDATE sets SET weight = ?, reps = ?, updated_at = datetime(\'now\') WHERE id = ?',
     weight,
     reps,
     setId
@@ -213,7 +216,7 @@ export function updateSet(setId: number, weight: number, reps: number): void {
 
 export function deleteSet(setId: number): void {
   const db = getDatabase();
-  db.runSync('DELETE FROM sets WHERE id = ?', setId);
+  db.runSync('UPDATE sets SET deleted_at = datetime(\'now\'), updated_at = datetime(\'now\') WHERE id = ?', setId);
 }
 
 export function getLoggedExercises(): LoggedExercise[] {
@@ -223,6 +226,7 @@ export function getLoggedExercises(): LoggedExercise[] {
      FROM sets s
      JOIN exercises e ON s.exercise_id = e.id
      JOIN muscle_groups mg ON e.muscle_group_id = mg.id
+     WHERE s.deleted_at IS NULL AND e.deleted_at IS NULL
      ORDER BY e.name`
   );
 }
@@ -234,7 +238,7 @@ export function getExerciseProgress(exerciseId: number, dateFrom?: string): Exer
       `SELECT w.date, MAX(s.weight) AS max_weight
        FROM sets s
        JOIN workouts w ON s.workout_id = w.id
-       WHERE s.exercise_id = ? AND w.date >= ?
+       WHERE s.exercise_id = ? AND w.date >= ? AND s.deleted_at IS NULL AND w.deleted_at IS NULL
        GROUP BY w.id
        ORDER BY w.date ASC`,
       exerciseId,
@@ -245,7 +249,7 @@ export function getExerciseProgress(exerciseId: number, dateFrom?: string): Exer
     `SELECT w.date, MAX(s.weight) AS max_weight
      FROM sets s
      JOIN workouts w ON s.workout_id = w.id
-     WHERE s.exercise_id = ?
+     WHERE s.exercise_id = ? AND s.deleted_at IS NULL AND w.deleted_at IS NULL
      GROUP BY w.id
      ORDER BY w.date ASC`,
     exerciseId
@@ -259,7 +263,7 @@ export function getExerciseVolume(exerciseId: number, dateFrom?: string): Exerci
       `SELECT w.date, SUM(s.weight * s.reps) AS total_volume
        FROM sets s
        JOIN workouts w ON s.workout_id = w.id
-       WHERE s.exercise_id = ? AND w.date >= ?
+       WHERE s.exercise_id = ? AND w.date >= ? AND s.deleted_at IS NULL AND w.deleted_at IS NULL
        GROUP BY w.id
        ORDER BY w.date ASC`,
       exerciseId,
@@ -270,7 +274,7 @@ export function getExerciseVolume(exerciseId: number, dateFrom?: string): Exerci
     `SELECT w.date, SUM(s.weight * s.reps) AS total_volume
      FROM sets s
      JOIN workouts w ON s.workout_id = w.id
-     WHERE s.exercise_id = ?
+     WHERE s.exercise_id = ? AND s.deleted_at IS NULL AND w.deleted_at IS NULL
      GROUP BY w.id
      ORDER BY w.date ASC`,
     exerciseId
@@ -284,7 +288,7 @@ export function getPersonalRecords(exerciseId: number): { maxWeight: PersonalRec
     `SELECT s.weight, s.reps, w.date
      FROM sets s
      JOIN workouts w ON s.workout_id = w.id
-     WHERE s.exercise_id = ?
+     WHERE s.exercise_id = ? AND s.deleted_at IS NULL AND w.deleted_at IS NULL
      ORDER BY s.weight DESC
      LIMIT 1`,
     exerciseId
@@ -294,7 +298,7 @@ export function getPersonalRecords(exerciseId: number): { maxWeight: PersonalRec
     `SELECT w.date, SUM(s.weight * s.reps) AS total_volume
      FROM sets s
      JOIN workouts w ON s.workout_id = w.id
-     WHERE s.exercise_id = ?
+     WHERE s.exercise_id = ? AND s.deleted_at IS NULL AND w.deleted_at IS NULL
      GROUP BY w.id
      ORDER BY total_volume DESC
      LIMIT 1`,
@@ -308,23 +312,23 @@ export function getPersonalRecords(exerciseId: number): { maxWeight: PersonalRec
 
 export function createProgram(name: string): number {
   const db = getDatabase();
-  const result = db.runSync('INSERT INTO programs (name) VALUES (?)', name);
+  const result = db.runSync('INSERT INTO programs (name, updated_at) VALUES (?, datetime(\'now\'))', name);
   return result.lastInsertRowId;
 }
 
 export function getAllPrograms(): Program[] {
   const db = getDatabase();
-  return db.getAllSync<Program>('SELECT id, name, created_at FROM programs ORDER BY name');
+  return db.getAllSync<Program>('SELECT id, name, created_at FROM programs WHERE deleted_at IS NULL ORDER BY name');
 }
 
 export function renameProgram(programId: number, name: string): void {
   const db = getDatabase();
-  db.runSync('UPDATE programs SET name = ? WHERE id = ?', name, programId);
+  db.runSync('UPDATE programs SET name = ?, updated_at = datetime(\'now\') WHERE id = ?', name, programId);
 }
 
 export function deleteProgram(programId: number): void {
   const db = getDatabase();
-  db.runSync('DELETE FROM programs WHERE id = ?', programId);
+  db.runSync('UPDATE programs SET deleted_at = datetime(\'now\'), updated_at = datetime(\'now\') WHERE id = ?', programId);
 }
 
 // --- Templates ---
@@ -339,7 +343,7 @@ export function createTemplate(
 ): number {
   const db = getDatabase();
   const result = db.runSync(
-    'INSERT INTO workout_templates (name, muscle_group_id, split_label, muscle_group_ids, program_id) VALUES (?, ?, ?, ?, ?)',
+    'INSERT INTO workout_templates (name, muscle_group_id, split_label, muscle_group_ids, program_id, updated_at) VALUES (?, ?, ?, ?, ?, datetime(\'now\'))',
     name,
     muscleGroupId,
     splitLabel,
@@ -350,7 +354,7 @@ export function createTemplate(
 
   for (let i = 0; i < exercises.length; i++) {
     db.runSync(
-      'INSERT INTO template_exercises (template_id, exercise_id, sort_order, default_sets) VALUES (?, ?, ?, ?)',
+      'INSERT INTO template_exercises (template_id, exercise_id, sort_order, default_sets, created_at, updated_at) VALUES (?, ?, ?, ?, datetime(\'now\'), datetime(\'now\'))',
       templateId,
       exercises[i].exerciseId,
       i,
@@ -364,7 +368,7 @@ export function createTemplate(
 export function getAllTemplates(): WorkoutTemplate[] {
   const db = getDatabase();
   const rows = db.getAllSync<Omit<WorkoutTemplate, 'muscle_group_ids'> & { muscle_group_ids: string }>(
-    'SELECT id, name, muscle_group_id, split_label, muscle_group_ids, program_id, sort_order, created_at FROM workout_templates ORDER BY sort_order, created_at'
+    'SELECT id, name, muscle_group_id, split_label, muscle_group_ids, program_id, sort_order, created_at FROM workout_templates WHERE deleted_at IS NULL ORDER BY sort_order, created_at'
   );
   return rows.map((row) => {
     let muscleGroupIds: number[];
@@ -380,7 +384,7 @@ export function getAllTemplates(): WorkoutTemplate[] {
 export function getTemplateExerciseCounts(): Map<number, number> {
   const db = getDatabase();
   const rows = db.getAllSync<{ template_id: number; exercise_count: number }>(
-    'SELECT template_id, COUNT(*) AS exercise_count FROM template_exercises GROUP BY template_id'
+    'SELECT template_id, COUNT(*) AS exercise_count FROM template_exercises WHERE deleted_at IS NULL GROUP BY template_id'
   );
   const map = new Map<number, number>();
   for (const row of rows) {
@@ -392,7 +396,7 @@ export function getTemplateExerciseCounts(): Map<number, number> {
 export function getTemplateWithExercises(templateId: number): TemplateWithExercises | null {
   const db = getDatabase();
   const row = db.getFirstSync<Omit<WorkoutTemplate, 'muscle_group_ids'> & { muscle_group_ids: string }>(
-    'SELECT id, name, muscle_group_id, split_label, muscle_group_ids, program_id, sort_order, created_at FROM workout_templates WHERE id = ?',
+    'SELECT id, name, muscle_group_id, split_label, muscle_group_ids, program_id, sort_order, created_at FROM workout_templates WHERE id = ? AND deleted_at IS NULL',
     templateId
   );
   if (!row) return null;
@@ -401,7 +405,7 @@ export function getTemplateWithExercises(templateId: number): TemplateWithExerci
     `SELECT te.id, te.template_id, te.exercise_id, e.name AS exercise_name, te.sort_order, te.default_sets
      FROM template_exercises te
      JOIN exercises e ON te.exercise_id = e.id
-     WHERE te.template_id = ?
+     WHERE te.template_id = ? AND te.deleted_at IS NULL
      ORDER BY te.sort_order`,
     templateId
   );
@@ -422,22 +426,23 @@ export function getTemplateWithExercises(templateId: number): TemplateWithExerci
 
 export function renameTemplate(templateId: number, name: string): void {
   const db = getDatabase();
-  db.runSync('UPDATE workout_templates SET name = ? WHERE id = ?', name, templateId);
+  db.runSync('UPDATE workout_templates SET name = ?, updated_at = datetime(\'now\') WHERE id = ?', name, templateId);
 }
 
 export function deleteTemplate(templateId: number): void {
   const db = getDatabase();
-  db.runSync('DELETE FROM workout_templates WHERE id = ?', templateId);
+  db.runSync('UPDATE template_exercises SET deleted_at = datetime(\'now\'), updated_at = datetime(\'now\') WHERE template_id = ? AND deleted_at IS NULL', templateId);
+  db.runSync('UPDATE workout_templates SET deleted_at = datetime(\'now\'), updated_at = datetime(\'now\') WHERE id = ?', templateId);
 }
 
 export function assignTemplateToProgram(templateId: number, programId: number | null): void {
   const db = getDatabase();
-  db.runSync('UPDATE workout_templates SET program_id = ? WHERE id = ?', programId, templateId);
+  db.runSync('UPDATE workout_templates SET program_id = ?, updated_at = datetime(\'now\') WHERE id = ?', programId, templateId);
 }
 
 export function updateTemplateSortOrder(templateId: number, sortOrder: number): void {
   const db = getDatabase();
-  db.runSync('UPDATE workout_templates SET sort_order = ? WHERE id = ?', sortOrder, templateId);
+  db.runSync('UPDATE workout_templates SET sort_order = ?, updated_at = datetime(\'now\') WHERE id = ?', sortOrder, templateId);
 }
 
 // --- Template exercises ---
@@ -450,7 +455,7 @@ export function addTemplateExercise(
 ): number {
   const db = getDatabase();
   const result = db.runSync(
-    'INSERT INTO template_exercises (template_id, exercise_id, sort_order, default_sets) VALUES (?, ?, ?, ?)',
+    'INSERT INTO template_exercises (template_id, exercise_id, sort_order, default_sets, created_at, updated_at) VALUES (?, ?, ?, ?, datetime(\'now\'), datetime(\'now\'))',
     templateId,
     exerciseId,
     sortOrder,
@@ -461,12 +466,12 @@ export function addTemplateExercise(
 
 export function removeTemplateExercise(templateExerciseId: number): void {
   const db = getDatabase();
-  db.runSync('DELETE FROM template_exercises WHERE id = ?', templateExerciseId);
+  db.runSync('UPDATE template_exercises SET deleted_at = datetime(\'now\'), updated_at = datetime(\'now\') WHERE id = ?', templateExerciseId);
 }
 
 export function updateTemplateExerciseDefaultSets(templateExerciseId: number, defaultSets: number): void {
   const db = getDatabase();
-  db.runSync('UPDATE template_exercises SET default_sets = ? WHERE id = ?', defaultSets, templateExerciseId);
+  db.runSync('UPDATE template_exercises SET default_sets = ?, updated_at = datetime(\'now\') WHERE id = ?', defaultSets, templateExerciseId);
 }
 
 // --- Rest time settings ---
@@ -484,12 +489,12 @@ export function getExerciseRestTime(exerciseId: number): number {
 
 export function setExerciseRestTime(exerciseId: number, seconds: number): void {
   const db = getDatabase();
-  db.runSync('UPDATE exercises SET default_rest_seconds = ? WHERE id = ?', seconds, exerciseId);
+  db.runSync('UPDATE exercises SET default_rest_seconds = ?, updated_at = datetime(\'now\') WHERE id = ?', seconds, exerciseId);
 }
 
 export function clearExerciseRestTime(exerciseId: number): void {
   const db = getDatabase();
-  db.runSync('UPDATE exercises SET default_rest_seconds = NULL WHERE id = ?', exerciseId);
+  db.runSync('UPDATE exercises SET default_rest_seconds = NULL, updated_at = datetime(\'now\') WHERE id = ?', exerciseId);
 }
 
 // --- Previous performance ---
@@ -499,10 +504,10 @@ export function getLastPerformance(exerciseId: number): LastPerformanceSet[] {
   return db.getAllSync<LastPerformanceSet>(
     `SELECT s.set_number, s.weight, s.reps
      FROM sets s
-     WHERE s.exercise_id = ? AND s.workout_id = (
+     WHERE s.exercise_id = ? AND s.deleted_at IS NULL AND s.workout_id = (
        SELECT s2.workout_id FROM sets s2
        JOIN workouts w ON s2.workout_id = w.id
-       WHERE s2.exercise_id = ?
+       WHERE s2.exercise_id = ? AND s2.deleted_at IS NULL AND w.deleted_at IS NULL
        ORDER BY w.date DESC, w.created_at DESC
        LIMIT 1
      )
@@ -517,7 +522,7 @@ export function getLastPerformance(exerciseId: number): LastPerformanceSet[] {
 export function checkForWeightPR(exerciseId: number, weight: number, _reps: number): boolean {
   const db = getDatabase();
   const row = db.getFirstSync<{ max_weight: number | null }>(
-    'SELECT MAX(weight) as max_weight FROM sets WHERE exercise_id = ?',
+    'SELECT MAX(weight) as max_weight FROM sets WHERE exercise_id = ? AND deleted_at IS NULL',
     exerciseId
   );
   if (row?.max_weight === null || row?.max_weight === undefined) return true;
@@ -527,7 +532,7 @@ export function checkForWeightPR(exerciseId: number, weight: number, _reps: numb
 export function checkForRepsPR(exerciseId: number, weight: number, reps: number): boolean {
   const db = getDatabase();
   const row = db.getFirstSync<{ max_reps: number | null }>(
-    'SELECT MAX(reps) as max_reps FROM sets WHERE exercise_id = ? AND weight >= ?',
+    'SELECT MAX(reps) as max_reps FROM sets WHERE exercise_id = ? AND weight >= ? AND deleted_at IS NULL',
     exerciseId,
     weight
   );
@@ -538,7 +543,7 @@ export function checkForRepsPR(exerciseId: number, weight: number, reps: number)
 export function savePR(exerciseId: number, prType: 'weight' | 'reps', weight: number, reps: number, date: string): void {
   const db = getDatabase();
   db.runSync(
-    'INSERT INTO personal_records (exercise_id, pr_type, weight, reps, date) VALUES (?, ?, ?, ?, ?)',
+    'INSERT INTO personal_records (exercise_id, pr_type, weight, reps, date, updated_at) VALUES (?, ?, ?, ?, ?, datetime(\'now\'))',
     exerciseId,
     prType,
     weight,
@@ -553,6 +558,7 @@ export function getRecentPRs(limit: number = 5): RecentPR[] {
     `SELECT pr.id, e.name as exercise_name, pr.pr_type, pr.weight, pr.reps, pr.date
      FROM personal_records pr
      JOIN exercises e ON pr.exercise_id = e.id
+     WHERE pr.deleted_at IS NULL AND e.deleted_at IS NULL
      ORDER BY pr.created_at DESC
      LIMIT ?`,
     limit
@@ -564,7 +570,7 @@ export function getRecentPRs(limit: number = 5): RecentPR[] {
 export function getWorkoutDaysInRange(startDate: string, endDate: string): string[] {
   const db = getDatabase();
   const rows = db.getAllSync<{ date: string }>(
-    'SELECT DISTINCT date FROM workouts WHERE date >= ? AND date <= ? ORDER BY date',
+    'SELECT DISTINCT date FROM workouts WHERE date >= ? AND date <= ? AND deleted_at IS NULL ORDER BY date',
     startDate,
     endDate
   );
@@ -598,7 +604,7 @@ export function getWeeklyStreak(weeklyGoal: number): number {
     const weekEnd = weekEndDate.toISOString().split('T')[0];
 
     const row = db.getFirstSync<{ cnt: number }>(
-      'SELECT COUNT(DISTINCT date) as cnt FROM workouts WHERE date >= ? AND date <= ?',
+      'SELECT COUNT(DISTINCT date) as cnt FROM workouts WHERE date >= ? AND date <= ? AND deleted_at IS NULL',
       weekStart,
       weekEnd
     );
@@ -623,7 +629,7 @@ export function getMonthlyStats(year: number, month: number): MonthlyStats {
   const endDate = `${nextYear}-${String(nextMonth).padStart(2, '0')}-01`;
 
   const countRow = db.getFirstSync<{ cnt: number }>(
-    'SELECT COUNT(*) as cnt FROM workouts WHERE date >= ? AND date < ?',
+    'SELECT COUNT(*) as cnt FROM workouts WHERE date >= ? AND date < ? AND deleted_at IS NULL',
     startDate,
     endDate
   );
@@ -633,7 +639,7 @@ export function getMonthlyStats(year: number, month: number): MonthlyStats {
     `SELECT COALESCE(SUM(s.weight * s.reps), 0) as total
      FROM sets s
      JOIN workouts w ON s.workout_id = w.id
-     WHERE w.date >= ? AND w.date < ?`,
+     WHERE w.date >= ? AND w.date < ? AND s.deleted_at IS NULL AND w.deleted_at IS NULL`,
     startDate,
     endDate
   );
@@ -696,7 +702,7 @@ export function getConsecutiveTrainingDays(): number {
   const startDate = twoWeeksAgo.toISOString().split('T')[0];
 
   const rows = db.getAllSync<{ date: string }>(
-    'SELECT DISTINCT date FROM workouts WHERE date >= ? ORDER BY date DESC',
+    'SELECT DISTINCT date FROM workouts WHERE date >= ? AND deleted_at IS NULL ORDER BY date DESC',
     startDate
   );
 
