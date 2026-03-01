@@ -18,8 +18,10 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Notifications from 'expo-notifications';
 import AppNavigator from './src/navigation/AppNavigator';
 import { initializeDatabase } from './src/database';
+import { getSetting, setSetting } from './src/database/services';
 import { ThemeProvider, useTheme } from './src/theme';
 import ErrorBoundary from './src/components/ErrorBoundary';
+import OnboardingScreen from './src/screens/OnboardingScreen';
 import { setupNotificationChannels, syncNotificationSchedules } from './src/utils/notifications';
 import { refreshQuickActions } from './src/utils/quickActions';
 import { handleQuickAction } from './src/utils/quickActionHandler';
@@ -103,11 +105,16 @@ function AppContent() {
 export default function App() {
   const [isReady, setIsReady] = useState(false);
   const [initError, setInitError] = useState(false);
+  const [onboardingDone, setOnboardingDone] = useState(false);
 
   const attemptInit = () => {
     setInitError(false);
     try {
       initializeDatabase();
+
+      const done = getSetting('onboarding_completed', 'false');
+      setOnboardingDone(done === 'true');
+
       setIsReady(true);
       requestNotificationPermissions();
       syncNotificationSchedules();
@@ -116,6 +123,16 @@ export default function App() {
     } catch (error) {
       console.error('Failed to initialize database:', error);
       setInitError(true);
+    }
+  };
+
+  const handleOnboardingComplete = (initialRoute?: string) => {
+    setSetting('onboarding_completed', 'true');
+    setOnboardingDone(true);
+    if (initialRoute) {
+      setTimeout(() => {
+        navigationRef.current?.navigate(initialRoute as never);
+      }, 100);
     }
   };
 
@@ -156,7 +173,7 @@ export default function App() {
   return (
     <ErrorBoundary>
       <ThemeProvider>
-        <AppContent />
+        {onboardingDone ? <AppContent /> : <OnboardingScreen onComplete={handleOnboardingComplete} />}
       </ThemeProvider>
     </ErrorBoundary>
   );
