@@ -26,6 +26,7 @@ import { scheduleRestNotification, cancelRestNotification, handleWorkoutComplete
 import { refreshQuickActions } from '../utils/quickActions';
 import { updateWidget } from '../utils/widgetBridge';
 import { consumePendingExercise } from '../utils/exerciseSelection';
+import { useSync } from '../contexts/SyncContext';
 
 type Props = NativeStackScreenProps<WorkoutStackParamList, 'ActiveWorkout'>;
 
@@ -50,6 +51,7 @@ function formatTime(seconds: number): string {
 export default function ActiveWorkoutScreen({ navigation, route }: Props) {
   useKeepAwake();
   const { colors, isDark } = useThemeControl();
+  const { syncNow } = useSync();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const { muscleGroupId, splitLabel, muscleGroupIds } = route.params;
   const [exercises, setExercises] = useState<ActiveExercise[]>([]);
@@ -471,6 +473,7 @@ export default function ActiveWorkoutScreen({ navigation, route }: Props) {
     handleWorkoutCompleted();
     updateWidget();
     refreshQuickActions();
+    syncNow().catch(() => {});
 
     Alert.alert('Workout Saved!', 'Great session!', [
       {
