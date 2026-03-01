@@ -110,6 +110,8 @@ function AppContent() {
 }
 
 export default function App() {
+  const scheme = useColorScheme();
+  const isDark = scheme === 'dark';
   const [isReady, setIsReady] = useState(false);
   const [initError, setInitError] = useState(false);
   const [onboardingDone, setOnboardingDone] = useState(false);
@@ -154,15 +156,18 @@ export default function App() {
     attemptInit();
   }, []);
 
+  const bg = isDark ? '#000000' : '#F2F2F7';
+  const accent = isDark ? '#0A84FF' : '#007AFF';
+
   if (initError) {
     return (
-      <View style={styles.loading}>
+      <View style={[styles.loading, { backgroundColor: bg }]}>
         <Ionicons name="cloud-offline-outline" size={64} color="#FF3B30" />
-        <Text style={styles.errorTitle}>Database Error</Text>
+        <Text style={[styles.errorTitle, { color: isDark ? '#FFFFFF' : '#000000' }]}>Database Error</Text>
         <Text style={styles.errorSubtitle}>
           Failed to initialize the database. Please restart the app.
         </Text>
-        <Pressable style={styles.retryButton} onPress={attemptInit}>
+        <Pressable style={[styles.retryButton, { backgroundColor: accent }]} onPress={attemptInit}>
           <Text style={styles.retryButtonText}>Retry</Text>
         </Pressable>
       </View>
@@ -171,8 +176,8 @@ export default function App() {
 
   if (!isReady) {
     return (
-      <View style={styles.loading}>
-        <ActivityIndicator size="large" color="#007AFF" />
+      <View style={[styles.loading, { backgroundColor: bg }]}>
+        <ActivityIndicator size="large" color={accent} />
       </View>
     );
   }
@@ -189,7 +194,6 @@ export default function App() {
 const styles = StyleSheet.create({
   loading: {
     flex: 1,
-    backgroundColor: '#F2F2F7',
     alignItems: 'center',
     justifyContent: 'center',
     padding: 24,
@@ -197,7 +201,6 @@ const styles = StyleSheet.create({
   errorTitle: {
     fontSize: 20,
     fontWeight: '700',
-    color: '#000',
     marginTop: 16,
   },
   errorSubtitle: {
@@ -208,7 +211,6 @@ const styles = StyleSheet.create({
   },
   retryButton: {
     marginTop: 24,
-    backgroundColor: '#007AFF',
     borderRadius: 12,
     paddingHorizontal: 24,
     paddingVertical: 12,
