@@ -48,7 +48,14 @@ Notifications.setNotificationHandler({
 
 setupNotificationChannels();
 
-export const navigationRef = createNavigationContainerRef();
+export type RootTabParamList = {
+  Dashboard: undefined;
+  'Log Workout': { screen?: string; params?: Record<string, unknown> };
+  History: undefined;
+  Progress: undefined;
+};
+
+export const navigationRef = createNavigationContainerRef<RootTabParamList>();
 
 function AppContent() {
   const colors = useTheme();

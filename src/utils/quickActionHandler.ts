@@ -6,7 +6,7 @@ export function handleQuickAction(action: Action) {
   if (!navigationRef.isReady()) return;
 
   if (action.id === 'start-workout') {
-    navigationRef.navigate('Log Workout' as never, { screen: 'StartWorkout' } as never);
+    navigationRef.navigate('Log Workout', { screen: 'StartWorkout' });
     return;
   }
 
@@ -17,11 +17,11 @@ export function handleQuickAction(action: Action) {
   const template = getTemplateWithExercises(Number(templateId));
   if (!template) {
     // Template was deleted -- fall back to StartWorkout
-    navigationRef.navigate('Log Workout' as never, { screen: 'StartWorkout' } as never);
+    navigationRef.navigate('Log Workout', { screen: 'StartWorkout' });
     return;
   }
 
-  navigationRef.navigate('Log Workout' as never, {
+  navigationRef.navigate('Log Workout', {
     screen: 'ActiveWorkout',
     params: {
       workoutId: -1,
@@ -37,5 +37,5 @@ export function handleQuickAction(action: Action) {
         })),
       },
     },
-  } as never);
+  });
 }
