@@ -9,5 +9,20 @@
 ## Milestone: v3.0 — Quality of Life & Visual Refresh *(completed — [archive](milestones/v3.0-ROADMAP.md))*
 6 phases, 6 plans, 53 commits. Stability audit, glassmorphic design system, full UI redesign, onboarding flow, dark/light theme switching.
 
+## Milestone: v4.0 — Social & Cloud *(active)*
+
+Transform the app from a solo local-first tracker into a connected social fitness platform. Backend: Supabase (Postgres + Auth + Realtime + Storage). Full cloud sync, user profiles, friends, workout sharing, leaderboards, and community templates.
+
+| Phase | Name | Research | Status |
+|-------|------|----------|--------|
+| 18 | Supabase Setup & Authentication | yes | pending |
+| 19 | Cloud Sync & Data Migration | yes | pending |
+| 20 | User Profiles | no | pending |
+| 21 | Friends & Activity Feed | yes | pending |
+| 22 | Workout Sharing | no | pending |
+| 23 | Leaderboards | no | pending |
+| 24 | Community Templates | yes | pending |
+| 25 | Social Polish & Integration | no | pending |
+
 ---
-*Last updated: 2026-03-01 — v3.0 milestone archived*
+*Last updated: 2026-03-01 — v4.0 milestone created*

@@ -1,7 +1,8 @@
 # Project State
 
 ## Current Milestone
-None — v3.0 archived. Ready for v4.0 planning.
+v4.0 — Social & Cloud (phases 18-25)
+Next phase to plan: 18 — Supabase Setup & Authentication (research first)
 
 ## Completed Milestones
 | Version | Name | Phases | Archive |
@@ -58,4 +59,4 @@ None
 | initialRoute via onComplete callback | 2026-03-01 | Post-onboarding navigation uses navigationRef with setTimeout(100ms) for mount timing |
 
 ---
-*Last updated: 2026-03-01 — v3.0 milestone archived. 3 milestones shipped (v1.0, v2.0, v3.0).*
+*Last updated: 2026-03-01 — v4.0 milestone created (8 phases, 18-25)*

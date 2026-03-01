@@ -25,5 +25,18 @@ Improve daily usability with templates, rest timer, streak tracking, notificatio
 | 10 | Notifications | completed |
 | 11 | Home Screen Widget & Quick Actions | completed |
 
+## v3.0 — Quality of Life & Visual Refresh *(completed 2026-03-01)*
+
+Polish the app with a glassmorphic UI redesign, onboarding flow, and stability improvements.
+
+| Phase | Name | Status |
+|-------|------|--------|
+| 12 | Stability & Performance Audit | completed |
+| 13 | Glassmorphic Design System | completed |
+| 14 | Glassmorphic UI — Core Screens | completed |
+| 15 | Glassmorphic UI — Secondary Screens | completed |
+| 16 | Onboarding Flow | completed |
+| 17 | Final Polish & Integration | completed |
+
 ---
-*Last updated: 2026-02-28 — v2.0 archived*
+*Last updated: 2026-03-01 — v3.0 archived*
