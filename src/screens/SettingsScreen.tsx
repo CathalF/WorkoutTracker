@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
+  ActivityIndicator,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -27,6 +28,7 @@ import {
 import { useThemeControl, ThemeColors } from '../theme';
 import { GradientBackground } from '../components/glass';
 import { useAuth } from '../contexts/AuthContext';
+import { useSync } from '../contexts/SyncContext';
 
 const DAY_LABELS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 // Maps display index (0=Sun..6=Sat) to expo weekday (1=Sun..7=Sat)
@@ -38,10 +40,23 @@ function formatTime(hour: number, minute: number): string {
   return `${displayHour}:${minute.toString().padStart(2, '0')} ${period}`;
 }
 
+function formatRelativeTime(isoString: string): string {
+  const diff = Date.now() - new Date(isoString).getTime();
+  const seconds = Math.floor(diff / 1000);
+  if (seconds < 60) return 'just now';
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes} minute${minutes === 1 ? '' : 's'} ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours} hour${hours === 1 ? '' : 's'} ago`;
+  const days = Math.floor(hours / 24);
+  return `${days} day${days === 1 ? '' : 's'} ago`;
+}
+
 export default function SettingsScreen() {
   const navigation = useNavigation();
   const { colors, isDark } = useThemeControl();
   const { signOut, user } = useAuth();
+  const { isSyncing, lastSyncedAt, lastSyncResult, syncNow } = useSync();
   const styles = useMemo(() => createStyles(colors), [colors]);
 
   const [weeklyGoal, setWeeklyGoal] = useState(3);
@@ -281,6 +296,45 @@ export default function SettingsScreen() {
           </>
         )}
 
+        {/* Cloud Sync Section */}
+        {user && (
+          <>
+            <Text style={styles.sectionLabel}>CLOUD SYNC</Text>
+            <View style={styles.settingCard}>
+              {isSyncing ? (
+                <View style={staticStyles.syncStatusRow}>
+                  <ActivityIndicator size="small" color={colors.primary} />
+                  <Text style={[styles.settingLabel, { marginLeft: 8 }]}>Syncing...</Text>
+                </View>
+              ) : lastSyncResult && !lastSyncResult.success ? (
+                <Text style={[styles.settingLabel, { color: colors.destructive }]}>
+                  Sync failed: {lastSyncResult.errors[0] ?? 'Unknown error'}
+                </Text>
+              ) : lastSyncedAt ? (
+                <Text style={styles.settingLabel}>
+                  Last synced: {formatRelativeTime(lastSyncedAt)}
+                </Text>
+              ) : (
+                <Text style={[styles.settingLabel, { color: colors.textSecondary }]}>
+                  Not synced yet
+                </Text>
+              )}
+            </View>
+            <Pressable
+              style={({ pressed }) => [styles.settingCard, pressed && staticStyles.pressed]}
+              onPress={syncNow}
+              disabled={isSyncing}
+            >
+              <Text style={[styles.syncNowText, isSyncing && { opacity: 0.5 }]}>Sync Now</Text>
+              <Ionicons
+                name="cloud-upload-outline"
+                size={20}
+                color={isSyncing ? colors.textSecondary : colors.primary}
+              />
+            </Pressable>
+          </>
+        )}
+
         {/* Account Section */}
         <Text style={styles.sectionLabel}>ACCOUNT</Text>
         {user?.email && (
@@ -319,6 +373,10 @@ const staticStyles = StyleSheet.create({
   },
   pressed: {
     opacity: 0.7,
+  },
+  syncStatusRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
 });
 
@@ -442,5 +500,10 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: colors.destructive,
+  },
+  syncNowText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.primary,
   },
 });
