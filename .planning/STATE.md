@@ -2,7 +2,7 @@
 
 ## Current Milestone
 v3.0 — Quality of Life & Visual Refresh (phases 12-17)
-Next phase to plan: 15 — Glassmorphic UI — Secondary Screens
+Next phase to plan: 16 — Onboarding Flow
 
 ## Completed Milestones
 | Version | Name | Phases | Archive |
@@ -47,6 +47,10 @@ None
 | GlassCard for exercise blocks | 2026-02-28 | ActiveWorkoutScreen exercise blocks wrapped in GlassCard instead of styled View with surface/border |
 | GlassModal for all modals | 2026-02-28 | ActiveWorkoutScreen modals migrated from raw Modal+overlay to GlassModal component |
 | useThemeControl over useTheme | 2026-02-28 | Screens needing isDark (for BlurView tint) use useThemeControl() instead of useTheme() |
+| GlassModal for all template modals | 2026-03-01 | TemplateManagementScreen 3 plain Modals → GlassModal for consistency |
+| Electric blue for all chart accents | 2026-03-01 | ProgressScreen volume bars changed from green to electric blue to match glass theme accent |
+| Individual glass cards for Settings rows | 2026-03-01 | Settings rows separated into individual glass cards with margins instead of flat stacked rows |
+| Custom glass header for Settings | 2026-03-01 | DashboardStackNavigator headerShown removed; SettingsScreen renders its own glass header |
 
 ---
-*Last updated: 2026-02-28 — phase 14 plan 01 completed (8 tasks, 7 commits)*
+*Last updated: 2026-03-01 — phase 15 plan 01 completed (6 tasks, 5 commits)*
