@@ -18,11 +18,24 @@ Transform the app from a solo local-first tracker into a connected social fitnes
 | 18 | Supabase Setup & Authentication | yes | done (1 plan, 11 commits) |
 | 19 | Cloud Sync & Data Migration | yes | done (1 plan, 8 commits) |
 | 20 | User Profiles | no | done (1 plan, 12 commits) |
-| 21 | Friends & Activity Feed | yes | pending |
+| 21 | Friends & Activity Feed | yes | planned (5 plans) |
 | 22 | Workout Sharing | no | pending |
 | 23 | Leaderboards | no | pending |
 | 24 | Community Templates | yes | pending |
 | 25 | Social Polish & Integration | no | pending |
 
+### Phase 21: Friends & Activity Feed
+
+**Goal:** Add social layer with friend discovery, friend requests, and activity feed showing friends' workouts with high-five reactions and read-only workout detail views.
+
+**Plans:** 5 plans
+
+Plans:
+- [ ] 21-01-PLAN.md — Schema SQL, TypeScript types, and friendService data foundation
+- [ ] 21-02-PLAN.md — FriendsContext, SocialStackNavigator, App.tsx wiring (providers, deep links, tab badge)
+- [ ] 21-03-PLAN.md — FriendSearchScreen and FriendListScreen (friend management)
+- [ ] 21-04-PLAN.md — SocialFeedScreen, HighFiveButton, FriendWorkoutDetailScreen (feed experience)
+- [ ] 21-05-PLAN.md — Push token registration, edge function, per-workout hide toggle (finishing touches)
+
 ---
-*Last updated: 2026-03-01 — Phase 20 done (User Profiles)*
+*Last updated: 2026-03-01 — Phase 21 planned (Friends & Activity Feed)*
