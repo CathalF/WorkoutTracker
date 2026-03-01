@@ -78,6 +78,10 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
   const setupFade = useRef(new Animated.Value(0)).current;
   const setupSlide = useRef(new Animated.Value(30)).current;
 
+  // Page 3 (Ready) animations
+  const readyFade = useRef(new Animated.Value(0)).current;
+  const readySlide = useRef(new Animated.Value(30)).current;
+
   // Trigger entrance animations per page
   useEffect(() => {
     if (animatedPages.current.has(currentPage)) return;
@@ -130,7 +134,22 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
         }),
       ]).start();
     }
-  }, [currentPage, welcomeFade, welcomeSlide, featureAnims, setupFade, setupSlide]);
+
+    if (currentPage === 3) {
+      Animated.parallel([
+        Animated.timing(readyFade, {
+          toValue: 1,
+          duration: 500,
+          useNativeDriver: true,
+        }),
+        Animated.timing(readySlide, {
+          toValue: 0,
+          duration: 500,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    }
+  }, [currentPage, welcomeFade, welcomeSlide, featureAnims, setupFade, setupSlide, readyFade, readySlide]);
 
   // Trigger page 0 animation on mount
   useEffect(() => {
@@ -300,7 +319,35 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
 
           {/* Page 4: Ready */}
           <View style={[styles.page, { width: screenWidth }]}>
-            <Text style={styles.pagePlaceholder}>Ready</Text>
+            <Animated.View
+              style={[
+                styles.readyContent,
+                { opacity: readyFade, transform: [{ translateY: readySlide }] },
+              ]}
+            >
+              <View style={styles.readyIconContainer}>
+                <Ionicons name="checkmark-circle" size={80} color={colors.success} />
+              </View>
+              <Text style={styles.readyTitle}>You're all set!</Text>
+              <Text style={styles.readySubtitle}>
+                Start logging workouts and watch your progress grow.
+              </Text>
+              <View style={styles.readyCTAs}>
+                <GlassButton
+                  title="Start Your First Workout"
+                  onPress={() => onComplete('Log Workout')}
+                  icon="barbell-outline"
+                  size="lg"
+                  variant="primary"
+                />
+                <GlassButton
+                  title="Explore Dashboard"
+                  onPress={() => onComplete()}
+                  variant="secondary"
+                  size="md"
+                />
+              </View>
+            </Animated.View>
           </View>
         </ScrollView>
 
@@ -342,12 +389,6 @@ const createStyles = (colors: ThemeColors) =>
       justifyContent: 'center',
       paddingHorizontal: spacing.xl,
     },
-    pagePlaceholder: {
-      fontSize: 24,
-      fontWeight: '600',
-      color: colors.textSecondary,
-    },
-
     // Welcome page
     welcomeContent: {
       alignItems: 'center',
@@ -466,6 +507,31 @@ const createStyles = (colors: ThemeColors) =>
     themeOptionButton: {
       minWidth: 72,
       paddingHorizontal: spacing.base,
+    },
+
+    // Ready page
+    readyContent: {
+      alignItems: 'center',
+      width: '100%',
+    },
+    readyIconContainer: {
+      marginBottom: spacing['2xl'],
+    },
+    readyTitle: {
+      fontSize: typography.size['3xl'],
+      fontWeight: typography.weight.bold,
+      color: colors.text,
+      marginBottom: spacing.sm,
+    },
+    readySubtitle: {
+      fontSize: typography.size.md,
+      color: colors.textSecondary,
+      textAlign: 'center',
+      marginBottom: spacing['3xl'],
+    },
+    readyCTAs: {
+      width: '100%',
+      gap: spacing.md,
     },
 
     // Controls
