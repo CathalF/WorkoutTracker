@@ -23,7 +23,9 @@ import { getSetting, setSetting } from './src/database/services';
 import { ThemeProvider, useTheme } from './src/theme';
 import ErrorBoundary from './src/components/ErrorBoundary';
 import OnboardingScreen from './src/screens/OnboardingScreen';
+import ProfileSetupScreen from './src/screens/ProfileSetupScreen';
 import { AuthProvider, useAuth } from './src/contexts/AuthContext';
+import { ProfileProvider, useProfile } from './src/contexts/ProfileContext';
 import { SyncProvider } from './src/contexts/SyncContext';
 import { setupNotificationChannels, syncNotificationSchedules } from './src/utils/notifications';
 import { refreshQuickActions } from './src/utils/quickActions';
@@ -189,14 +191,16 @@ export default function App() {
     <ErrorBoundary>
       <ThemeProvider>
         <AuthProvider>
-          <SyncProvider>
-            <AuthGate
-              onboardingDone={onboardingDone}
-              onOnboardingComplete={handleOnboardingComplete}
-              bg={bg}
-              accent={accent}
-            />
-          </SyncProvider>
+          <ProfileProvider>
+            <SyncProvider>
+              <AuthGate
+                onboardingDone={onboardingDone}
+                onOnboardingComplete={handleOnboardingComplete}
+                bg={bg}
+                accent={accent}
+              />
+            </SyncProvider>
+          </ProfileProvider>
         </AuthProvider>
       </ThemeProvider>
     </ErrorBoundary>
@@ -215,6 +219,7 @@ function AuthGate({
   accent: string;
 }) {
   const { session, isLoading } = useAuth();
+  const { isLoading: profileLoading, hasProfile, refreshProfile } = useProfile();
 
   if (isLoading) {
     return (
@@ -234,6 +239,18 @@ function AuthGate({
         <AuthStackNavigator />
       </NavigationContainer>
     );
+  }
+
+  if (profileLoading) {
+    return (
+      <View style={[styles.loading, { backgroundColor: bg }]}>
+        <ActivityIndicator size="large" color={accent} />
+      </View>
+    );
+  }
+
+  if (!hasProfile) {
+    return <ProfileSetupScreen onComplete={refreshProfile} />;
   }
 
   return <AppContent />;
