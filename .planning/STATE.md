@@ -2,7 +2,7 @@
 
 ## Current Milestone
 v4.0 — Social & Cloud (phases 18-25)
-Next phase to execute: 20 — User Profiles (pending)
+Next phase to execute: 21 — Friends & Activity Feed (pending)
 
 ## Completed Milestones
 | Version | Name | Phases | Archive |
@@ -68,6 +68,12 @@ None
 | ID mapping table for sync | 2026-03-01 | sync_id_map bridges local INTEGER autoincrement to remote UUID; mapped by table+localId |
 | Soft deletes for sync | 2026-03-01 | Hard DELETEs replaced with SET deleted_at; enables bidirectional delete propagation |
 | Auto-sync 5-min cooldown | 2026-03-01 | Sync on app foreground if >5 min since last sync; manual "Sync Now" always available |
+| Profiles are cloud-native | 2026-03-01 | No local SQLite profiles table; profiles live only in Supabase, cached in React context |
+| Supabase Storage for avatars | 2026-03-01 | Public avatars bucket; file path {user_id}/avatar.{ext}; cache-busting query param |
+| Profile gate post-auth | 2026-03-01 | ProfileSetupScreen rendered directly (not in navigator) when no profile exists after auth |
+| ProfileProvider order | 2026-03-01 | AuthProvider > ProfileProvider > SyncProvider; profile needs auth, sync is independent |
+| Shared avatar picker utility | 2026-03-01 | pickAvatar() in src/utils/avatarPicker.ts reused by ProfileSetup + EditProfile |
+| Type-safe DashboardStack | 2026-03-01 | DashboardStackParamList exported with typed UserProfile: { userId: string } |
 
 ---
-*Last updated: 2026-03-01 — Phase 19 done (Cloud Sync & Data Migration)*
+*Last updated: 2026-03-01 — Phase 20 done (User Profiles)*

@@ -17,7 +17,7 @@ Transform the app from a solo local-first tracker into a connected social fitnes
 |-------|------|----------|--------|
 | 18 | Supabase Setup & Authentication | yes | done (1 plan, 11 commits) |
 | 19 | Cloud Sync & Data Migration | yes | done (1 plan, 8 commits) |
-| 20 | User Profiles | no | pending |
+| 20 | User Profiles | no | done (1 plan, 12 commits) |
 | 21 | Friends & Activity Feed | yes | pending |
 | 22 | Workout Sharing | no | pending |
 | 23 | Leaderboards | no | pending |
@@ -25,4 +25,4 @@ Transform the app from a solo local-first tracker into a connected social fitnes
 | 25 | Social Polish & Integration | no | pending |
 
 ---
-*Last updated: 2026-03-01 — Phase 19 done (Cloud Sync)*
+*Last updated: 2026-03-01 — Phase 20 done (User Profiles)*
