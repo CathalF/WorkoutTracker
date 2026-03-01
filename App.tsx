@@ -24,6 +24,7 @@ import { ThemeProvider, useTheme } from './src/theme';
 import ErrorBoundary from './src/components/ErrorBoundary';
 import OnboardingScreen from './src/screens/OnboardingScreen';
 import { AuthProvider, useAuth } from './src/contexts/AuthContext';
+import { SyncProvider } from './src/contexts/SyncContext';
 import { setupNotificationChannels, syncNotificationSchedules } from './src/utils/notifications';
 import { refreshQuickActions } from './src/utils/quickActions';
 import { handleQuickAction } from './src/utils/quickActionHandler';
@@ -188,12 +189,14 @@ export default function App() {
     <ErrorBoundary>
       <ThemeProvider>
         <AuthProvider>
-          <AuthGate
-            onboardingDone={onboardingDone}
-            onOnboardingComplete={handleOnboardingComplete}
-            bg={bg}
-            accent={accent}
-          />
+          <SyncProvider>
+            <AuthGate
+              onboardingDone={onboardingDone}
+              onOnboardingComplete={handleOnboardingComplete}
+              bg={bg}
+              accent={accent}
+            />
+          </SyncProvider>
         </AuthProvider>
       </ThemeProvider>
     </ErrorBoundary>
