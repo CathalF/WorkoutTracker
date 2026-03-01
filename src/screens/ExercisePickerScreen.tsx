@@ -11,6 +11,7 @@ import {
   View,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { BlurView } from 'expo-blur';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { WorkoutStackParamList } from '../navigation/WorkoutStackNavigator';
 import { Exercise, ExerciseWithMuscleGroup, MuscleGroup } from '../types';
@@ -20,8 +21,8 @@ import {
   getExercisesByMuscleGroup,
   searchExercises,
 } from '../database/services';
-import { useTheme, ThemeColors } from '../theme';
-import { GlassModal } from '../components/glass';
+import { useThemeControl, ThemeColors } from '../theme';
+import { GradientBackground, GlassModal } from '../components/glass';
 import { setPendingExercise } from '../utils/exerciseSelection';
 
 type Props = NativeStackScreenProps<WorkoutStackParamList, 'ExercisePicker'>;
@@ -32,7 +33,7 @@ interface Section {
 }
 
 export default function ExercisePickerScreen({ navigation, route }: Props) {
-  const colors = useTheme();
+  const { colors, isDark } = useThemeControl();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const { muscleGroupIds, alreadyAddedIds } = route.params;
   const alreadyAddedSet = new Set(alreadyAddedIds);
@@ -153,8 +154,10 @@ export default function ExercisePickerScreen({ navigation, route }: Props) {
   };
 
   return (
-    <View style={styles.container}>
+    <GradientBackground>
       <View style={styles.header}>
+        <BlurView intensity={80} tint={isDark ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
+        <View style={[StyleSheet.absoluteFill, { backgroundColor: colors.glassElevated }]} />
         <Pressable onPress={() => navigation.goBack()} style={staticStyles.backButton}>
           <Ionicons name="close" size={28} color={colors.primary} />
         </Pressable>
@@ -283,7 +286,7 @@ export default function ExercisePickerScreen({ navigation, route }: Props) {
           </Pressable>
         </View>
       </GlassModal>
-    </View>
+    </GradientBackground>
   );
 }
 
@@ -329,10 +332,6 @@ const staticStyles = StyleSheet.create({
 });
 
 const createStyles = (colors: ThemeColors) => StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.surface,
-  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -340,9 +339,8 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     paddingTop: 56,
     paddingHorizontal: 16,
     paddingBottom: 12,
-    backgroundColor: colors.surface,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border,
+    borderBottomColor: colors.glassBorder,
   },
   headerTitle: {
     fontSize: 18,
@@ -355,8 +353,10 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     marginHorizontal: 16,
     marginVertical: 8,
     paddingHorizontal: 12,
-    backgroundColor: colors.searchBackground,
+    backgroundColor: colors.glassSurface,
     borderRadius: 10,
+    borderWidth: 1,
+    borderColor: colors.glassBorder,
   },
   searchInput: {
     flex: 1,
@@ -371,7 +371,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     paddingVertical: 10,
     gap: 6,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.separator,
+    borderBottomColor: colors.glassBorder,
   },
   browseAllText: {
     fontSize: 15,
@@ -381,14 +381,11 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   sectionHeader: {
     paddingVertical: 10,
     paddingHorizontal: 16,
-    backgroundColor: colors.background,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border,
   },
   sectionHeaderText: {
     fontSize: 15,
     fontWeight: '600',
-    color: colors.text,
+    color: colors.textSecondary,
   },
   exerciseRow: {
     flexDirection: 'row',
@@ -396,8 +393,12 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     justifyContent: 'space-between',
     paddingVertical: 12,
     paddingHorizontal: 16,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.separator,
+    marginHorizontal: 16,
+    marginBottom: 4,
+    backgroundColor: colors.glassSurface,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: colors.glassBorder,
   },
   exerciseName: {
     fontSize: 16,
