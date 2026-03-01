@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Skill(gsd:execute-plan)",
+      "Skill(gsd:execute-plan:*)",
+      "Skill(gsd:execute-phase)",
+      "Skill(gsd:execute-phase:*)",
+      "Bash(cd:*)",
+      "Bash(dir:*)",
+      "Bash(npx tsc:*)",
+      "Bash(npx ruflo*)"
+    ]
+  }
+}
