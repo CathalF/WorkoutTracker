@@ -15,7 +15,7 @@ Transform the app from a solo local-first tracker into a connected social fitnes
 
 | Phase | Name | Research | Status |
 |-------|------|----------|--------|
-| 18 | Supabase Setup & Authentication | yes | pending |
+| 18 | Supabase Setup & Authentication | yes | done (1 plan, 11 commits) |
 | 19 | Cloud Sync & Data Migration | yes | pending |
 | 20 | User Profiles | no | pending |
 | 21 | Friends & Activity Feed | yes | pending |
@@ -25,4 +25,4 @@ Transform the app from a solo local-first tracker into a connected social fitnes
 | 25 | Social Polish & Integration | no | pending |
 
 ---
-*Last updated: 2026-03-01 — v4.0 milestone created*
+*Last updated: 2026-03-01 — Phase 18 complete (Supabase auth)*

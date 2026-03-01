@@ -2,7 +2,7 @@
 
 ## Current Milestone
 v4.0 — Social & Cloud (phases 18-25)
-Next phase to plan: 18 — Supabase Setup & Authentication (research first)
+Next phase to plan: 19 — Cloud Sync & Data Migration (research first)
 
 ## Completed Milestones
 | Version | Name | Phases | Archive |
@@ -57,6 +57,11 @@ None
 | Animated API over reanimated for onboarding | 2026-03-01 | RN built-in Animated with useNativeDriver sufficient for fade+slide entrances; no new dependency |
 | Skip → Setup page | 2026-03-01 | Skip button lands on setup page (not ready page) so users still configure preferences before completing |
 | initialRoute via onComplete callback | 2026-03-01 | Post-onboarding navigation uses navigationRef with setTimeout(100ms) for mount timing |
+| AsyncStorage for Supabase auth | 2026-03-01 | More battle-tested than expo-sqlite localStorage for session persistence |
+| detectSessionInUrl: false | 2026-03-01 | Required for React Native; prevents OAuth redirect interference |
+| AuthGate component in App.tsx | 2026-03-01 | Separate component needed because useAuth() requires AuthProvider above in tree |
+| Onboarding before auth | 2026-03-01 | Local setup (theme, goals) is independent of cloud identity; onboarding first, then auth |
+| Sets/template_exercises RLS via parent FK | 2026-03-01 | Inherited ownership through workout/template parent lookup in RLS policies |
 
 ---
-*Last updated: 2026-03-01 — v4.0 milestone created (8 phases, 18-25)*
+*Last updated: 2026-03-01 — Phase 18 complete (Supabase auth, 11 commits)*
