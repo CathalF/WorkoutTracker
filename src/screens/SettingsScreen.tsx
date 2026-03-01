@@ -8,6 +8,7 @@ import {
   View,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { BlurView } from 'expo-blur';
 import { useNavigation } from '@react-navigation/native';
 import { NotificationPreferences } from '../types';
 import {
@@ -23,7 +24,8 @@ import {
   cancelInactivityNudge,
   cancelRestDaySuggestion,
 } from '../utils/notifications';
-import { useTheme, ThemeColors } from '../theme';
+import { useThemeControl, ThemeColors } from '../theme';
+import { GradientBackground } from '../components/glass';
 
 const DAY_LABELS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 // Maps display index (0=Sun..6=Sat) to expo weekday (1=Sun..7=Sat)
@@ -37,7 +39,7 @@ function formatTime(hour: number, minute: number): string {
 
 export default function SettingsScreen() {
   const navigation = useNavigation();
-  const colors = useTheme();
+  const { colors, isDark } = useThemeControl();
   const styles = useMemo(() => createStyles(colors), [colors]);
 
   const [weeklyGoal, setWeeklyGoal] = useState(3);
@@ -53,11 +55,10 @@ export default function SettingsScreen() {
   });
 
   useEffect(() => {
-    navigation.setOptions({ title: 'Settings' });
     const goalStr = getSetting('weekly_goal', '3');
     setWeeklyGoal(parseInt(goalStr, 10) || 3);
     setPrefs(getNotificationPreferences());
-  }, [navigation]);
+  }, []);
 
   const handleGoalChange = useCallback((goal: number) => {
     setWeeklyGoal(goal);
@@ -138,14 +139,24 @@ export default function SettingsScreen() {
   }, [prefs, updatePrefs]);
 
   return (
-    <View style={styles.container}>
+    <GradientBackground>
+      <View style={styles.header}>
+        <BlurView intensity={80} tint={isDark ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
+        <View style={[StyleSheet.absoluteFill, { backgroundColor: colors.glassElevated }]} />
+        <Pressable onPress={() => navigation.goBack()} hitSlop={8}>
+          <Ionicons name="chevron-back" size={28} color={colors.primary} />
+        </Pressable>
+        <Text style={styles.headerTitle}>Settings</Text>
+        <View style={staticStyles.headerPlaceholder} />
+      </View>
+
       <ScrollView contentContainerStyle={staticStyles.scrollContent}>
         {/* Training Section */}
-        <Text style={styles.sectionHeader}>TRAINING</Text>
-        <View style={styles.settingRow}>
+        <Text style={styles.sectionLabel}>TRAINING</Text>
+        <View style={styles.settingCard}>
           <Text style={styles.settingLabel}>Weekly Workout Goal</Text>
         </View>
-        <View style={[styles.settingRow, staticStyles.optionRow]}>
+        <View style={[styles.settingCard, staticStyles.optionRow]}>
           {[2, 3, 4, 5, 6, 7].map((n) => (
             <Pressable
               key={n}
@@ -160,19 +171,19 @@ export default function SettingsScreen() {
         </View>
 
         {/* Workout Reminders Section */}
-        <Text style={styles.sectionHeader}>WORKOUT REMINDERS</Text>
-        <View style={styles.settingRow}>
+        <Text style={styles.sectionLabel}>WORKOUT REMINDERS</Text>
+        <View style={styles.settingCard}>
           <Text style={styles.settingLabel}>Remind me to work out</Text>
           <Switch
             value={prefs.remindersEnabled}
             onValueChange={handleToggleReminders}
-            trackColor={{ false: colors.separator, true: colors.primary }}
+            trackColor={{ false: colors.glassBorder, true: colors.primary }}
           />
         </View>
 
         {prefs.remindersEnabled && (
           <>
-            <View style={[styles.settingRow, staticStyles.dayPickerRow]}>
+            <View style={[styles.settingCard, staticStyles.dayPickerRow]}>
               {DAY_LABELS.map((label, index) => {
                 const weekday = DAY_WEEKDAYS[index];
                 const isActive = prefs.reminderDays.includes(weekday);
@@ -190,7 +201,7 @@ export default function SettingsScreen() {
               })}
             </View>
 
-            <View style={styles.timeRow}>
+            <View style={styles.timeCard}>
               <Pressable style={styles.timeButton} onPress={() => adjustTime(-1)}>
                 <Ionicons name="remove" size={20} color={colors.text} />
               </Pressable>
@@ -205,22 +216,22 @@ export default function SettingsScreen() {
         )}
 
         {/* Inactivity Nudge Section */}
-        <Text style={styles.sectionHeader}>INACTIVITY NUDGE</Text>
-        <View style={styles.settingRow}>
+        <Text style={styles.sectionLabel}>INACTIVITY NUDGE</Text>
+        <View style={styles.settingCard}>
           <Text style={styles.settingLabel}>Remind me after inactivity</Text>
           <Switch
             value={prefs.nudgeEnabled}
             onValueChange={handleToggleNudge}
-            trackColor={{ false: colors.separator, true: colors.primary }}
+            trackColor={{ false: colors.glassBorder, true: colors.primary }}
           />
         </View>
 
         {prefs.nudgeEnabled && (
           <>
-            <View style={styles.settingRow}>
+            <View style={styles.settingCard}>
               <Text style={styles.settingLabel}>Nudge after {prefs.nudgeDays} days</Text>
             </View>
-            <View style={[styles.settingRow, staticStyles.optionRow]}>
+            <View style={[styles.settingCard, staticStyles.optionRow]}>
               {[2, 3, 4, 5, 6, 7].map((n) => (
                 <Pressable
                   key={n}
@@ -237,22 +248,22 @@ export default function SettingsScreen() {
         )}
 
         {/* Rest Day Suggestions Section */}
-        <Text style={styles.sectionHeader}>REST DAY SUGGESTIONS</Text>
-        <View style={styles.settingRow}>
+        <Text style={styles.sectionLabel}>REST DAY SUGGESTIONS</Text>
+        <View style={styles.settingCard}>
           <Text style={styles.settingLabel}>Suggest rest days</Text>
           <Switch
             value={prefs.restDayEnabled}
             onValueChange={handleToggleRestDay}
-            trackColor={{ false: colors.separator, true: colors.primary }}
+            trackColor={{ false: colors.glassBorder, true: colors.primary }}
           />
         </View>
 
         {prefs.restDayEnabled && (
           <>
-            <View style={styles.settingRow}>
+            <View style={styles.settingCard}>
               <Text style={styles.settingLabel}>Suggest after {prefs.restDayThreshold} consecutive days</Text>
             </View>
-            <View style={[styles.settingRow, staticStyles.optionRow]}>
+            <View style={[styles.settingCard, staticStyles.optionRow]}>
               {[2, 3, 4, 5].map((n) => (
                 <Pressable
                   key={n}
@@ -268,13 +279,16 @@ export default function SettingsScreen() {
           </>
         )}
       </ScrollView>
-    </View>
+    </GradientBackground>
   );
 }
 
 const staticStyles = StyleSheet.create({
   scrollContent: {
     paddingBottom: 40,
+  },
+  headerPlaceholder: {
+    width: 28,
   },
   optionRow: {
     flexDirection: 'row',
@@ -289,11 +303,22 @@ const staticStyles = StyleSheet.create({
 });
 
 const createStyles = (colors: ThemeColors) => StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingTop: 56,
+    paddingHorizontal: 16,
+    paddingBottom: 12,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.glassBorder,
   },
-  sectionHeader: {
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: colors.text,
+  },
+  sectionLabel: {
     fontSize: 13,
     fontWeight: '600',
     letterSpacing: 0.5,
@@ -302,14 +327,17 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     marginTop: 24,
     marginBottom: 8,
   },
-  settingRow: {
+  settingCard: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: 16,
-    backgroundColor: colors.surface,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border,
+    marginHorizontal: 16,
+    marginBottom: 8,
+    backgroundColor: colors.glassSurface,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.glassBorder,
   },
   settingLabel: {
     fontSize: 16,
@@ -319,12 +347,15 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: colors.separator,
+    backgroundColor: colors.glassSurface,
+    borderWidth: 1,
+    borderColor: colors.glassBorder,
     alignItems: 'center',
     justifyContent: 'center',
   },
   dayButtonActive: {
     backgroundColor: colors.primary,
+    borderColor: colors.primary,
   },
   dayButtonText: {
     fontSize: 14,
@@ -334,15 +365,18 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   dayButtonTextActive: {
     color: '#fff',
   },
-  timeRow: {
+  timeCard: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 16,
     padding: 16,
-    backgroundColor: colors.surface,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border,
+    marginHorizontal: 16,
+    marginBottom: 8,
+    backgroundColor: colors.glassSurface,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.glassBorder,
   },
   timeDisplay: {
     fontSize: 24,
@@ -355,7 +389,9 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: colors.separator,
+    backgroundColor: colors.glassSurface,
+    borderWidth: 1,
+    borderColor: colors.glassBorder,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -365,9 +401,9 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.background,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
+    backgroundColor: colors.glassSurface,
+    borderWidth: 1,
+    borderColor: colors.glassBorder,
     paddingHorizontal: 12,
   },
   optionButtonActive: {
