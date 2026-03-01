@@ -3,9 +3,9 @@
 A clean, purpose-built mobile app for everyday gym goers to log workouts and track strength progress over time — replacing the messy notes app workflow.
 
 ## Current State
-**Shipped:** v2.0 (2026-02-28)
+**Shipped:** v3.0 (2026-03-01)
 
-The app is a fully functional local-first workout tracker with:
+The app is a fully functional local-first workout tracker with a premium glassmorphic UI:
 - Structured workout logging with muscle group splits and exercise picker
 - Reusable workout templates with program grouping and previous performance reference
 - Built-in rest timer with background notifications and per-exercise settings
@@ -15,7 +15,10 @@ The app is a fully functional local-first workout tracker with:
 - Workout history with date grouping, filtering, and inline editing
 - Scheduled workout reminders, inactivity nudges, and rest day suggestions
 - Android home screen widget and app icon quick actions
-- Dark/light theme, error boundaries, and polished UI
+- Glassmorphic UI with frosted glass components, gradient backgrounds, and blur headers
+- Dark/light/system theme switching with persistent preference
+- First-launch onboarding flow with preference setup
+- Typed navigation with zero TypeScript errors
 
 ## Problem
 
@@ -54,7 +57,7 @@ Everyday gym goers who already track workouts but are limited by notes apps. The
 
 ### Active
 
-(None — planning v3.0)
+(None — v3.0 shipped, ready for v4.0 planning)
 
 ### Out of Scope
 
@@ -76,6 +79,7 @@ Everyday gym goers who already track workouts but are limited by notes apps. The
 | Notifications | expo-notifications | Local scheduled notifications for reminders and timer alerts |
 | Widget | react-native-android-widget | Android home screen widget via config plugin |
 | Quick Actions | expo-quick-actions | Cross-platform app icon shortcuts |
+| Glass Effects | expo-blur | BlurView for frosted glass UI surfaces |
 
 ## Key Decisions
 
@@ -90,9 +94,9 @@ Everyday gym goers who already track workouts but are limited by notes apps. The
 
 | Risk | Impact | Mitigation |
 |------|--------|------------|
-| Data loss (local-only) | High — users lose all workout history | Clear v3 plan for cloud sync; encourage device backups |
+| Data loss (local-only) | High — users lose all workout history | Cloud sync planned for future milestone; encourage device backups |
 | Logging speed not fast enough | High — users revert to notes app | Prioritize UX testing of entry flow; benchmark against notes app speed |
 | Chart performance with large datasets | Medium — slow rendering after months of data | Paginate/aggregate data; lazy load charts |
 
 ---
-*Last updated: 2026-02-28 — v2.0 milestone completed*
+*Last updated: 2026-03-01 — v3.0 milestone completed*

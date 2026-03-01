@@ -1,14 +1,14 @@
 # Project State
 
 ## Current Milestone
-v3.0 — Quality of Life & Visual Refresh (phases 12-17) — COMPLETE
-All 6 phases complete. Milestone ready to close.
+None — v3.0 archived. Ready for v4.0 planning.
 
 ## Completed Milestones
 | Version | Name | Phases | Archive |
 |---------|------|--------|---------|
 | v1.0 | Core Workout Logging & Progress Tracking | 1-6 | [v1.0-ROADMAP.md](milestones/v1.0-ROADMAP.md) |
 | v2.0 | UX & Engagement | 7-11 | [v2.0-ROADMAP.md](milestones/v2.0-ROADMAP.md) |
+| v3.0 | Quality of Life & Visual Refresh | 12-17 | [v3.0-ROADMAP.md](milestones/v3.0-ROADMAP.md) |
 
 ## Active Issues
 None
@@ -58,4 +58,4 @@ None
 | initialRoute via onComplete callback | 2026-03-01 | Post-onboarding navigation uses navigationRef with setTimeout(100ms) for mount timing |
 
 ---
-*Last updated: 2026-03-01 — phase 17 plan 01 completed (6 tasks, 4 commits). v3.0 milestone complete.*
+*Last updated: 2026-03-01 — v3.0 milestone archived. 3 milestones shipped (v1.0, v2.0, v3.0).*
