@@ -17,11 +17,13 @@ import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import * as Notifications from 'expo-notifications';
 import AppNavigator from './src/navigation/AppNavigator';
+import AuthStackNavigator from './src/navigation/AuthStackNavigator';
 import { initializeDatabase } from './src/database';
 import { getSetting, setSetting } from './src/database/services';
 import { ThemeProvider, useTheme } from './src/theme';
 import ErrorBoundary from './src/components/ErrorBoundary';
 import OnboardingScreen from './src/screens/OnboardingScreen';
+import { AuthProvider, useAuth } from './src/contexts/AuthContext';
 import { setupNotificationChannels, syncNotificationSchedules } from './src/utils/notifications';
 import { refreshQuickActions } from './src/utils/quickActions';
 import { handleQuickAction } from './src/utils/quickActionHandler';
@@ -185,10 +187,53 @@ export default function App() {
   return (
     <ErrorBoundary>
       <ThemeProvider>
-        {onboardingDone ? <AppContent /> : <OnboardingScreen onComplete={handleOnboardingComplete} />}
+        <AuthProvider>
+          <AuthGate
+            onboardingDone={onboardingDone}
+            onOnboardingComplete={handleOnboardingComplete}
+            bg={bg}
+            accent={accent}
+          />
+        </AuthProvider>
       </ThemeProvider>
     </ErrorBoundary>
   );
+}
+
+function AuthGate({
+  onboardingDone,
+  onOnboardingComplete,
+  bg,
+  accent,
+}: {
+  onboardingDone: boolean;
+  onOnboardingComplete: (initialRoute?: string) => void;
+  bg: string;
+  accent: string;
+}) {
+  const { session, isLoading } = useAuth();
+
+  if (isLoading) {
+    return (
+      <View style={[styles.loading, { backgroundColor: bg }]}>
+        <ActivityIndicator size="large" color={accent} />
+      </View>
+    );
+  }
+
+  if (!onboardingDone) {
+    return <OnboardingScreen onComplete={onOnboardingComplete} />;
+  }
+
+  if (!session) {
+    return (
+      <NavigationContainer>
+        <AuthStackNavigator />
+      </NavigationContainer>
+    );
+  }
+
+  return <AppContent />;
 }
 
 const styles = StyleSheet.create({
