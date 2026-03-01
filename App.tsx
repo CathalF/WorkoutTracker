@@ -140,7 +140,7 @@ export default function App() {
     setOnboardingDone(true);
     if (initialRoute) {
       setTimeout(() => {
-        navigationRef.current?.navigate(initialRoute as never);
+        navigationRef.current?.navigate(initialRoute as any);
       }, 100);
     }
   };
