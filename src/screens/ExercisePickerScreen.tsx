@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
+  Alert,
   FlatList,
   Pressable,
+  ScrollView,
   SectionList,
   StyleSheet,
   Text,
@@ -13,11 +15,13 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { WorkoutStackParamList } from '../navigation/WorkoutStackNavigator';
 import { Exercise, ExerciseWithMuscleGroup, MuscleGroup } from '../types';
 import {
+  addCustomExercise,
   getAllMuscleGroups,
   getExercisesByMuscleGroup,
   searchExercises,
 } from '../database/services';
 import { useTheme, ThemeColors } from '../theme';
+import { GlassModal } from '../components/glass';
 import { setPendingExercise } from '../utils/exerciseSelection';
 
 type Props = NativeStackScreenProps<WorkoutStackParamList, 'ExercisePicker'>;
@@ -39,6 +43,12 @@ export default function ExercisePickerScreen({ navigation, route }: Props) {
   const [searchResults, setSearchResults] = useState<ExerciseWithMuscleGroup[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Create exercise modal state
+  const [createModalVisible, setCreateModalVisible] = useState(false);
+  const [newExerciseName, setNewExerciseName] = useState('');
+  const [selectedMuscleGroupId, setSelectedMuscleGroupId] = useState<number | null>(null);
+  const muscleGroups = useMemo(() => getAllMuscleGroups(), []);
 
   const loadExercises = useCallback(() => {
     const allGroups: MuscleGroup[] = getAllMuscleGroups();
@@ -86,6 +96,29 @@ export default function ExercisePickerScreen({ navigation, route }: Props) {
     navigation.goBack();
   };
 
+  const openCreateModal = () => {
+    setNewExerciseName('');
+    setSelectedMuscleGroupId(muscleGroupIds.length > 0 ? muscleGroupIds[0] : null);
+    setCreateModalVisible(true);
+  };
+
+  const handleCreateExercise = () => {
+    const trimmedName = newExerciseName.trim();
+    if (trimmedName === '') {
+      Alert.alert('Validation Error', 'Please enter an exercise name.');
+      return;
+    }
+    if (selectedMuscleGroupId === null) {
+      Alert.alert('Validation Error', 'Please select a muscle group.');
+      return;
+    }
+
+    const newId = addCustomExercise(trimmedName, selectedMuscleGroupId);
+    setCreateModalVisible(false);
+    setPendingExercise({ id: newId, name: trimmedName });
+    navigation.goBack();
+  };
+
   const renderExerciseItem = (exercise: Exercise, isAdded: boolean) => (
     <Pressable
       key={exercise.id}
@@ -126,7 +159,9 @@ export default function ExercisePickerScreen({ navigation, route }: Props) {
           <Ionicons name="close" size={28} color={colors.primary} />
         </Pressable>
         <Text style={styles.headerTitle}>Select Exercise</Text>
-        <View style={staticStyles.backButton} />
+        <Pressable onPress={openCreateModal} style={staticStyles.backButton}>
+          <Ionicons name="add" size={28} color={colors.primary} />
+        </Pressable>
       </View>
 
       <View style={styles.searchContainer}>
@@ -191,6 +226,63 @@ export default function ExercisePickerScreen({ navigation, route }: Props) {
           windowSize={5}
         />
       )}
+
+      <GlassModal
+        visible={createModalVisible}
+        onClose={() => setCreateModalVisible(false)}
+        title="Create Exercise"
+      >
+        <TextInput
+          style={styles.modalInput}
+          placeholder="Exercise name"
+          placeholderTextColor={colors.textSecondary}
+          value={newExerciseName}
+          onChangeText={setNewExerciseName}
+          autoCapitalize="words"
+          autoFocus
+        />
+
+        <Text style={styles.modalLabel}>Muscle Group</Text>
+        <ScrollView style={staticStyles.muscleGroupList}>
+          {muscleGroups.map((mg) => (
+            <Pressable
+              key={mg.id}
+              style={[
+                staticStyles.muscleGroupOption,
+                selectedMuscleGroupId === mg.id && styles.muscleGroupOptionSelected,
+              ]}
+              onPress={() => setSelectedMuscleGroupId(mg.id)}
+            >
+              <Text
+                style={[
+                  styles.muscleGroupOptionText,
+                  selectedMuscleGroupId === mg.id && styles.muscleGroupOptionTextSelected,
+                ]}
+              >
+                {mg.name}
+              </Text>
+              {selectedMuscleGroupId === mg.id && (
+                <Ionicons name="checkmark" size={20} color={colors.primary} />
+              )}
+            </Pressable>
+          ))}
+        </ScrollView>
+
+        <View style={staticStyles.modalButtons}>
+          <Pressable
+            style={styles.modalCancelButton}
+            onPress={() => setCreateModalVisible(false)}
+          >
+            <Text style={styles.modalCancelText}>Cancel</Text>
+          </Pressable>
+          <Pressable
+            style={styles.modalCreateButton}
+            onPress={handleCreateExercise}
+          >
+            <Text style={staticStyles.modalCreateText}>Create</Text>
+          </Pressable>
+        </View>
+      </GlassModal>
     </View>
   );
 }
@@ -211,6 +303,28 @@ const staticStyles = StyleSheet.create({
   },
   exerciseRowDisabled: {
     opacity: 0.5,
+  },
+  muscleGroupList: {
+    maxHeight: 200,
+    marginBottom: 16,
+  },
+  muscleGroupOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    marginBottom: 4,
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  modalCreateText: {
+    fontSize: 16,
+    color: '#fff',
+    fontWeight: '600',
   },
 });
 
@@ -307,5 +421,56 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     fontSize: 16,
     color: colors.textSecondary,
     marginTop: 12,
+  },
+  modalInput: {
+    height: 44,
+    borderWidth: 1,
+    borderColor: colors.glassBorder,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    fontSize: 16,
+    color: colors.text,
+    backgroundColor: colors.glassSurface,
+    marginBottom: 16,
+  },
+  modalLabel: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: colors.text,
+    marginBottom: 8,
+  },
+  muscleGroupOptionSelected: {
+    backgroundColor: colors.pressed,
+  },
+  muscleGroupOptionText: {
+    fontSize: 16,
+    color: colors.text,
+  },
+  muscleGroupOptionTextSelected: {
+    color: colors.primary,
+    fontWeight: '600',
+  },
+  modalCancelButton: {
+    flex: 1,
+    height: 44,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: colors.glassBorder,
+    backgroundColor: colors.glassSurface,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalCancelText: {
+    fontSize: 16,
+    color: colors.textSecondary,
+    fontWeight: '600',
+  },
+  modalCreateButton: {
+    flex: 1,
+    height: 44,
+    borderRadius: 10,
+    backgroundColor: colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });
