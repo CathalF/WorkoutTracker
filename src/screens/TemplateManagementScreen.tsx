@@ -2,7 +2,6 @@ import { useCallback, useMemo, useRef, useState } from 'react';
 import {
   Alert,
   FlatList,
-  Modal,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -11,6 +10,7 @@ import {
   View,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { BlurView } from 'expo-blur';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useFocusEffect } from '@react-navigation/native';
 import { WorkoutStackParamList } from '../navigation/WorkoutStackNavigator';
@@ -35,12 +35,13 @@ import {
   searchExercises,
 } from '../database/services';
 import { updateWidget } from '../utils/widgetBridge';
-import { useTheme, ThemeColors } from '../theme';
+import { useThemeControl, ThemeColors } from '../theme';
+import { GradientBackground, GlassModal } from '../components/glass';
 
 type Props = NativeStackScreenProps<WorkoutStackParamList, 'TemplateManagement'>;
 
 export default function TemplateManagementScreen({ navigation }: Props) {
-  const colors = useTheme();
+  const { colors, isDark } = useThemeControl();
   const styles = useMemo(() => createStyles(colors), [colors]);
 
   const [programs, setPrograms] = useState<Program[]>([]);
@@ -249,8 +250,10 @@ export default function TemplateManagementScreen({ navigation }: Props) {
   }, [programs, templateDetails]);
 
   return (
-    <View style={styles.container}>
+    <GradientBackground>
       <View style={styles.header}>
+        <BlurView intensity={80} tint={isDark ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
+        <View style={[StyleSheet.absoluteFill, { backgroundColor: colors.glassElevated }]} />
         <Pressable onPress={() => navigation.goBack()} hitSlop={8}>
           <Ionicons name="chevron-back" size={28} color={colors.primary} />
         </Pressable>
@@ -366,130 +369,109 @@ export default function TemplateManagementScreen({ navigation }: Props) {
       </ScrollView>
 
       {/* Rename / Create Program Modal */}
-      <Modal
+      <GlassModal
         visible={renameModalVisible}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setRenameModalVisible(false)}
+        onClose={() => setRenameModalVisible(false)}
+        title={
+          renameTargetRef.current?.type === 'program' && renameTargetRef.current.id === -1
+            ? 'New Program'
+            : renameTargetRef.current?.type === 'program'
+              ? 'Rename Program'
+              : 'Rename Template'
+        }
       >
-        <Pressable style={styles.modalOverlay} onPress={() => setRenameModalVisible(false)}>
-          <Pressable style={styles.modalContent} onPress={() => {}}>
-            <Text style={styles.modalTitle}>
-              {renameTargetRef.current?.type === 'program' && renameTargetRef.current.id === -1
-                ? 'New Program'
-                : renameTargetRef.current?.type === 'program'
-                  ? 'Rename Program'
-                  : 'Rename Template'}
-            </Text>
-            <TextInput
-              style={styles.modalInput}
-              value={renameValue}
-              onChangeText={setRenameValue}
-              placeholder="Name"
-              placeholderTextColor={colors.textTertiary}
-              autoFocus
-              selectTextOnFocus
-            />
-            <View style={staticStyles.modalButtons}>
-              <Pressable
-                style={[styles.modalButton, styles.modalCancelButton]}
-                onPress={() => setRenameModalVisible(false)}
-              >
-                <Text style={styles.modalButtonText}>Cancel</Text>
-              </Pressable>
-              <Pressable
-                style={[styles.modalButton, styles.modalSaveButton]}
-                onPress={handleRenameSubmit}
-              >
-                <Text style={staticStyles.modalSaveText}>Save</Text>
-              </Pressable>
-            </View>
+        <TextInput
+          style={styles.modalInput}
+          value={renameValue}
+          onChangeText={setRenameValue}
+          placeholder="Name"
+          placeholderTextColor={colors.textTertiary}
+          autoFocus
+          selectTextOnFocus
+        />
+        <View style={staticStyles.modalButtons}>
+          <Pressable
+            style={[styles.modalButton, styles.modalCancelButton]}
+            onPress={() => setRenameModalVisible(false)}
+          >
+            <Text style={styles.modalButtonText}>Cancel</Text>
           </Pressable>
-        </Pressable>
-      </Modal>
+          <Pressable
+            style={[styles.modalButton, styles.modalSaveButton]}
+            onPress={handleRenameSubmit}
+          >
+            <Text style={staticStyles.modalSaveText}>Save</Text>
+          </Pressable>
+        </View>
+      </GlassModal>
 
       {/* Program Picker Modal */}
-      <Modal
+      <GlassModal
         visible={programPickerVisible}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setProgramPickerVisible(false)}
+        onClose={() => setProgramPickerVisible(false)}
+        title="Assign to Program"
       >
-        <Pressable style={styles.modalOverlay} onPress={() => setProgramPickerVisible(false)}>
-          <Pressable style={styles.modalContent} onPress={() => {}}>
-            <Text style={styles.modalTitle}>Assign to Program</Text>
-            <Pressable
-              style={styles.pickerOption}
-              onPress={() => handleSelectProgram(null)}
-            >
-              <Text style={styles.pickerOptionText}>None (Unassigned)</Text>
-            </Pressable>
-            {programs.map((program) => (
-              <Pressable
-                key={program.id}
-                style={styles.pickerOption}
-                onPress={() => handleSelectProgram(program.id)}
-              >
-                <Text style={styles.pickerOptionText}>{program.name}</Text>
-              </Pressable>
-            ))}
-            <Pressable
-              style={[styles.modalButton, styles.modalCancelButton, staticStyles.pickerCancelButton]}
-              onPress={() => setProgramPickerVisible(false)}
-            >
-              <Text style={styles.modalButtonText}>Cancel</Text>
-            </Pressable>
-          </Pressable>
+        <Pressable
+          style={styles.pickerOption}
+          onPress={() => handleSelectProgram(null)}
+        >
+          <Text style={styles.pickerOptionText}>None (Unassigned)</Text>
         </Pressable>
-      </Modal>
+        {programs.map((program) => (
+          <Pressable
+            key={program.id}
+            style={styles.pickerOption}
+            onPress={() => handleSelectProgram(program.id)}
+          >
+            <Text style={styles.pickerOptionText}>{program.name}</Text>
+          </Pressable>
+        ))}
+        <Pressable
+          style={[styles.modalButton, styles.modalCancelButton, staticStyles.pickerCancelButton]}
+          onPress={() => setProgramPickerVisible(false)}
+        >
+          <Text style={styles.modalButtonText}>Cancel</Text>
+        </Pressable>
+      </GlassModal>
 
       {/* Exercise Picker Modal */}
-      <Modal
+      <GlassModal
         visible={exercisePickerVisible}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setExercisePickerVisible(false)}
+        onClose={() => setExercisePickerVisible(false)}
+        title="Add Exercise"
       >
-        <View style={styles.exercisePickerContainer}>
-          <View style={styles.exercisePickerHeader}>
-            <Pressable onPress={() => setExercisePickerVisible(false)}>
-              <Ionicons name="close" size={28} color={colors.primary} />
-            </Pressable>
-            <Text style={styles.exercisePickerTitle}>Add Exercise</Text>
-            <View style={staticStyles.headerPlaceholder} />
-          </View>
-          <View style={styles.searchContainer}>
-            <Ionicons name="search" size={18} color={colors.textSecondary} style={staticStyles.searchIcon} />
-            <TextInput
-              style={styles.searchInput}
-              placeholder="Search exercises..."
-              placeholderTextColor={colors.textSecondary}
-              value={exerciseSearch}
-              onChangeText={handleExerciseSearchChange}
-              autoCapitalize="none"
-              autoCorrect={false}
-            />
-          </View>
-          <FlatList
-            data={filteredExercises}
-            keyExtractor={(item) => item.id.toString()}
-            renderItem={({ item }) => (
-              <Pressable
-                style={styles.exercisePickerRow}
-                onPress={() => handleSelectExercise(item)}
-              >
-                <View>
-                  <Text style={styles.exercisePickerName}>{item.name}</Text>
-                  <Text style={styles.exercisePickerGroup}>{item.muscle_group_name}</Text>
-                </View>
-              </Pressable>
-            )}
-            keyboardShouldPersistTaps="handled"
-            contentContainerStyle={staticStyles.exercisePickerList}
+        <View style={styles.searchContainer}>
+          <Ionicons name="search" size={18} color={colors.textSecondary} style={staticStyles.searchIcon} />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search exercises..."
+            placeholderTextColor={colors.textSecondary}
+            value={exerciseSearch}
+            onChangeText={handleExerciseSearchChange}
+            autoCapitalize="none"
+            autoCorrect={false}
           />
         </View>
-      </Modal>
-    </View>
+        <FlatList
+          data={filteredExercises}
+          keyExtractor={(item) => item.id.toString()}
+          renderItem={({ item }) => (
+            <Pressable
+              style={styles.exercisePickerRow}
+              onPress={() => handleSelectExercise(item)}
+            >
+              <View>
+                <Text style={styles.exercisePickerName}>{item.name}</Text>
+                <Text style={styles.exercisePickerGroup}>{item.muscle_group_name}</Text>
+              </View>
+            </Pressable>
+          )}
+          keyboardShouldPersistTaps="handled"
+          contentContainerStyle={staticStyles.exercisePickerList}
+          style={staticStyles.exercisePickerFlatList}
+        />
+      </GlassModal>
+    </GradientBackground>
   );
 }
 
@@ -556,13 +538,12 @@ const staticStyles = StyleSheet.create({
   exercisePickerList: {
     paddingBottom: 20,
   },
+  exercisePickerFlatList: {
+    maxHeight: 300,
+  },
 });
 
 const createStyles = (colors: ThemeColors) => StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -570,9 +551,8 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     paddingTop: 60,
     paddingHorizontal: 16,
     paddingBottom: 12,
-    backgroundColor: colors.surface,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border,
+    borderBottomColor: colors.glassBorder,
   },
   headerTitle: {
     fontSize: 18,
@@ -600,12 +580,12 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     marginBottom: 12,
   },
   programCard: {
-    backgroundColor: colors.surface,
+    backgroundColor: colors.glassSurface,
     borderRadius: 12,
     padding: 14,
     marginBottom: 10,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
+    borderWidth: 1,
+    borderColor: colors.glassBorder,
   },
   programName: {
     fontSize: 16,
@@ -625,12 +605,12 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     marginTop: 4,
   },
   templateCard: {
-    backgroundColor: colors.surface,
+    backgroundColor: colors.glassSurface,
     borderRadius: 12,
     padding: 14,
     marginBottom: 10,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
+    borderWidth: 1,
+    borderColor: colors.glassBorder,
   },
   templateName: {
     fontSize: 16,
@@ -645,7 +625,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   exerciseList: {
     marginTop: 12,
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: colors.separator,
+    borderTopColor: colors.glassBorder,
     paddingTop: 8,
   },
   exerciseName: {
@@ -662,37 +642,15 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     fontWeight: '500',
     color: colors.primary,
   },
-  // Modals
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: colors.modalOverlay,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 32,
-  },
-  modalContent: {
-    backgroundColor: colors.surface,
-    borderRadius: 14,
-    padding: 24,
-    width: '100%',
-    maxWidth: 340,
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: colors.text,
-    textAlign: 'center',
-    marginBottom: 16,
-  },
   modalInput: {
     height: 44,
     borderWidth: 1,
-    borderColor: colors.separator,
+    borderColor: colors.glassBorder,
     borderRadius: 10,
     paddingHorizontal: 14,
     fontSize: 16,
     color: colors.text,
-    backgroundColor: colors.background,
+    backgroundColor: colors.glassSurface,
   },
   modalButton: {
     flex: 1,
@@ -701,9 +659,9 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     alignItems: 'center',
   },
   modalCancelButton: {
-    backgroundColor: colors.background,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
+    backgroundColor: colors.glassSurface,
+    borderWidth: 1,
+    borderColor: colors.glassBorder,
   },
   modalButtonText: {
     fontSize: 16,
@@ -716,42 +674,21 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   pickerOption: {
     paddingVertical: 14,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.separator,
+    borderBottomColor: colors.glassBorder,
   },
   pickerOptionText: {
     fontSize: 16,
     color: colors.text,
   },
-  // Exercise picker
-  exercisePickerContainer: {
-    flex: 1,
-    backgroundColor: colors.surface,
-    marginTop: 80,
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
-  },
-  exercisePickerHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border,
-  },
-  exercisePickerTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: colors.text,
-  },
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginHorizontal: 16,
-    marginVertical: 8,
+    marginBottom: 12,
     paddingHorizontal: 12,
-    backgroundColor: colors.searchBackground,
+    backgroundColor: colors.glassSurface,
     borderRadius: 10,
+    borderWidth: 1,
+    borderColor: colors.glassBorder,
   },
   searchInput: {
     flex: 1,
@@ -761,9 +698,9 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   },
   exercisePickerRow: {
     paddingVertical: 12,
-    paddingHorizontal: 16,
+    paddingHorizontal: 4,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.separator,
+    borderBottomColor: colors.glassBorder,
   },
   exercisePickerName: {
     fontSize: 16,
