@@ -11,8 +11,9 @@ import {
   NativeScrollEvent,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useThemeControl, ThemeColors } from '../theme';
+import { useThemeControl, ThemeColors, ThemeMode } from '../theme';
 import { GradientBackground, GlassCard, GlassButton } from '../components/glass';
+import { getSetting, setSetting } from '../database/services';
 import { spacing, radii, typography } from '../theme/tokens';
 
 const TOTAL_PAGES = 4;
@@ -39,12 +40,24 @@ interface OnboardingScreenProps {
   onComplete: (initialRoute?: string) => void;
 }
 
+const THEME_OPTIONS: { label: string; value: ThemeMode }[] = [
+  { label: 'System', value: 'system' },
+  { label: 'Light', value: 'light' },
+  { label: 'Dark', value: 'dark' },
+];
+
 export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
-  const { colors } = useThemeControl();
+  const { colors, themeMode, setThemeMode } = useThemeControl();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const { width: screenWidth } = useWindowDimensions();
   const scrollRef = useRef<ScrollView>(null);
   const [currentPage, setCurrentPage] = useState(0);
+
+  // Setup page state
+  const [weeklyGoal, setWeeklyGoal] = useState(() => {
+    const saved = getSetting('weekly_goal', '3');
+    return parseInt(saved, 10) || 3;
+  });
 
   // Animation refs — track which pages have been animated
   const animatedPages = useRef<Set<number>>(new Set());
@@ -60,6 +73,10 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
       slide: new Animated.Value(30),
     }))
   ).current;
+
+  // Page 2 (Setup) animations
+  const setupFade = useRef(new Animated.Value(0)).current;
+  const setupSlide = useRef(new Animated.Value(30)).current;
 
   // Trigger entrance animations per page
   useEffect(() => {
@@ -98,7 +115,22 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
       ]);
       Animated.parallel(anims).start();
     }
-  }, [currentPage, welcomeFade, welcomeSlide, featureAnims]);
+
+    if (currentPage === 2) {
+      Animated.parallel([
+        Animated.timing(setupFade, {
+          toValue: 1,
+          duration: 500,
+          useNativeDriver: true,
+        }),
+        Animated.timing(setupSlide, {
+          toValue: 0,
+          duration: 500,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    }
+  }, [currentPage, welcomeFade, welcomeSlide, featureAnims, setupFade, setupSlide]);
 
   // Trigger page 0 animation on mount
   useEffect(() => {
@@ -116,6 +148,11 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
       }),
     ]).start();
   }, [welcomeFade, welcomeSlide]);
+
+  const handleGoalChange = (goal: number) => {
+    setWeeklyGoal(goal);
+    setSetting('weekly_goal', goal.toString());
+  };
 
   const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
     const offsetX = event.nativeEvent.contentOffset.x;
@@ -198,7 +235,67 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
 
           {/* Page 3: Setup */}
           <View style={[styles.page, { width: screenWidth }]}>
-            <Text style={styles.pagePlaceholder}>Setup</Text>
+            <Animated.View
+              style={[
+                styles.setupContent,
+                { opacity: setupFade, transform: [{ translateY: setupSlide }] },
+              ]}
+            >
+              <Text style={styles.sectionTitle}>Make it yours</Text>
+
+              {/* Weekly Goal */}
+              <GlassCard style={styles.setupCard}>
+                <Text style={styles.setupLabel}>Weekly workout goal</Text>
+                <View style={styles.optionRow}>
+                  {[2, 3, 4, 5, 6, 7].map((n) => (
+                    <Pressable
+                      key={n}
+                      style={[
+                        styles.optionButton,
+                        weeklyGoal === n && styles.optionButtonActive,
+                      ]}
+                      onPress={() => handleGoalChange(n)}
+                    >
+                      <Text
+                        style={[
+                          styles.optionButtonText,
+                          weeklyGoal === n && styles.optionButtonTextActive,
+                        ]}
+                      >
+                        {n}
+                      </Text>
+                    </Pressable>
+                  ))}
+                </View>
+              </GlassCard>
+
+              {/* Theme Picker */}
+              <GlassCard style={styles.setupCard}>
+                <Text style={styles.setupLabel}>Theme</Text>
+                <View style={styles.optionRow}>
+                  {THEME_OPTIONS.map((opt) => (
+                    <Pressable
+                      key={opt.value}
+                      style={[
+                        styles.optionButton,
+                        styles.themeOptionButton,
+                        themeMode === opt.value && styles.optionButtonActive,
+                      ]}
+                      onPress={() => setThemeMode(opt.value)}
+                    >
+                      <Text
+                        style={[
+                          styles.optionButtonText,
+                          themeMode === opt.value && styles.optionButtonTextActive,
+                        ]}
+                      >
+                        {opt.label}
+                      </Text>
+                    </Pressable>
+                  ))}
+                </View>
+              </GlassCard>
+            </Animated.View>
           </View>
 
           {/* Page 4: Ready */}
@@ -320,6 +417,55 @@ const createStyles = (colors: ThemeColors) =>
       fontSize: typography.size.sm,
       color: colors.textSecondary,
       lineHeight: typography.size.sm * typography.lineHeight.normal,
+    },
+
+    // Setup page
+    setupContent: {
+      flex: 1,
+      justifyContent: 'center',
+      width: '100%',
+      gap: spacing.base,
+    },
+    setupCard: {
+      marginBottom: 0,
+    },
+    setupLabel: {
+      fontSize: typography.size.base,
+      fontWeight: typography.weight.semibold,
+      color: colors.text,
+      marginBottom: spacing.md,
+    },
+    optionRow: {
+      flexDirection: 'row',
+      justifyContent: 'center',
+      gap: 10,
+    },
+    optionButton: {
+      height: 44,
+      minWidth: 48,
+      borderRadius: 22,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: colors.glassSurface,
+      borderWidth: 1,
+      borderColor: colors.glassBorder,
+      paddingHorizontal: spacing.md,
+    },
+    optionButtonActive: {
+      backgroundColor: colors.primary,
+      borderColor: colors.primary,
+    },
+    optionButtonText: {
+      fontSize: typography.size.md,
+      fontWeight: typography.weight.semibold,
+      color: colors.text,
+    },
+    optionButtonTextActive: {
+      color: '#FFFFFF',
+    },
+    themeOptionButton: {
+      minWidth: 72,
+      paddingHorizontal: spacing.base,
     },
 
     // Controls
