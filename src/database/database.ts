@@ -127,4 +127,131 @@ function initializeSchema(database: SQLiteDatabase): void {
   } catch {
     // Column already exists — ignore
   }
+
+  // ── Sync metadata migrations ──
+
+  // exercises: updated_at, deleted_at
+  try {
+    database.execSync(`ALTER TABLE exercises ADD COLUMN updated_at TEXT`);
+  } catch {
+    // Column already exists — ignore
+  }
+  try {
+    database.execSync(`ALTER TABLE exercises ADD COLUMN deleted_at TEXT`);
+  } catch {
+    // Column already exists — ignore
+  }
+
+  // workouts: updated_at, deleted_at
+  try {
+    database.execSync(`ALTER TABLE workouts ADD COLUMN updated_at TEXT`);
+  } catch {
+    // Column already exists — ignore
+  }
+  try {
+    database.execSync(`ALTER TABLE workouts ADD COLUMN deleted_at TEXT`);
+  } catch {
+    // Column already exists — ignore
+  }
+
+  // sets: updated_at, deleted_at, created_at
+  try {
+    database.execSync(`ALTER TABLE sets ADD COLUMN created_at TEXT`);
+  } catch {
+    // Column already exists — ignore
+  }
+  try {
+    database.execSync(`ALTER TABLE sets ADD COLUMN updated_at TEXT`);
+  } catch {
+    // Column already exists — ignore
+  }
+  try {
+    database.execSync(`ALTER TABLE sets ADD COLUMN deleted_at TEXT`);
+  } catch {
+    // Column already exists — ignore
+  }
+
+  // programs: updated_at, deleted_at
+  try {
+    database.execSync(`ALTER TABLE programs ADD COLUMN updated_at TEXT`);
+  } catch {
+    // Column already exists — ignore
+  }
+  try {
+    database.execSync(`ALTER TABLE programs ADD COLUMN deleted_at TEXT`);
+  } catch {
+    // Column already exists — ignore
+  }
+
+  // workout_templates: updated_at, deleted_at
+  try {
+    database.execSync(`ALTER TABLE workout_templates ADD COLUMN updated_at TEXT`);
+  } catch {
+    // Column already exists — ignore
+  }
+  try {
+    database.execSync(`ALTER TABLE workout_templates ADD COLUMN deleted_at TEXT`);
+  } catch {
+    // Column already exists — ignore
+  }
+
+  // template_exercises: updated_at, deleted_at, created_at
+  try {
+    database.execSync(`ALTER TABLE template_exercises ADD COLUMN created_at TEXT`);
+  } catch {
+    // Column already exists — ignore
+  }
+  try {
+    database.execSync(`ALTER TABLE template_exercises ADD COLUMN updated_at TEXT`);
+  } catch {
+    // Column already exists — ignore
+  }
+  try {
+    database.execSync(`ALTER TABLE template_exercises ADD COLUMN deleted_at TEXT`);
+  } catch {
+    // Column already exists — ignore
+  }
+
+  // personal_records: updated_at, deleted_at
+  try {
+    database.execSync(`ALTER TABLE personal_records ADD COLUMN updated_at TEXT`);
+  } catch {
+    // Column already exists — ignore
+  }
+  try {
+    database.execSync(`ALTER TABLE personal_records ADD COLUMN deleted_at TEXT`);
+  } catch {
+    // Column already exists — ignore
+  }
+
+  // ── Sync tables ──
+
+  database.execSync(`
+    CREATE TABLE IF NOT EXISTS sync_meta (
+      key TEXT PRIMARY KEY,
+      value TEXT NOT NULL
+    );
+  `);
+
+  database.execSync(`
+    CREATE TABLE IF NOT EXISTS sync_id_map (
+      table_name TEXT NOT NULL,
+      local_id INTEGER NOT NULL,
+      remote_id TEXT NOT NULL,
+      PRIMARY KEY (table_name, local_id)
+    );
+  `);
+  database.execSync(`CREATE INDEX IF NOT EXISTS idx_sync_id_map_remote ON sync_id_map(table_name, remote_id);`);
+
+  // ── Backfill updated_at for existing rows ──
+
+  database.execSync(`UPDATE exercises SET updated_at = datetime('now') WHERE updated_at IS NULL`);
+  database.execSync(`UPDATE workouts SET updated_at = COALESCE(created_at, datetime('now')) WHERE updated_at IS NULL`);
+  database.execSync(`UPDATE sets SET created_at = datetime('now') WHERE created_at IS NULL`);
+  database.execSync(`UPDATE sets SET updated_at = COALESCE(created_at, datetime('now')) WHERE updated_at IS NULL`);
+  database.execSync(`UPDATE programs SET updated_at = COALESCE(created_at, datetime('now')) WHERE updated_at IS NULL`);
+  database.execSync(`UPDATE workout_templates SET updated_at = COALESCE(created_at, datetime('now')) WHERE updated_at IS NULL`);
+  database.execSync(`UPDATE template_exercises SET created_at = datetime('now') WHERE created_at IS NULL`);
+  database.execSync(`UPDATE template_exercises SET updated_at = COALESCE(created_at, datetime('now')) WHERE updated_at IS NULL`);
+  database.execSync(`UPDATE personal_records SET updated_at = COALESCE(created_at, datetime('now')) WHERE updated_at IS NULL`);
 }
