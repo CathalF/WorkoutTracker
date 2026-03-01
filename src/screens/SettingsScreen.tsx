@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
+  Image,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -28,6 +29,7 @@ import {
 import { useThemeControl, ThemeColors } from '../theme';
 import { GradientBackground } from '../components/glass';
 import { useAuth } from '../contexts/AuthContext';
+import { useProfile } from '../contexts/ProfileContext';
 import { useSync } from '../contexts/SyncContext';
 
 const DAY_LABELS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
@@ -56,6 +58,7 @@ export default function SettingsScreen() {
   const navigation = useNavigation();
   const { colors, isDark } = useThemeControl();
   const { signOut, user } = useAuth();
+  const { profile } = useProfile();
   const { isSyncing, lastSyncedAt, lastSyncResult, syncNow } = useSync();
   const styles = useMemo(() => createStyles(colors), [colors]);
 
@@ -168,6 +171,34 @@ export default function SettingsScreen() {
       </View>
 
       <ScrollView contentContainerStyle={staticStyles.scrollContent}>
+        {/* Profile Section */}
+        {profile && (
+          <>
+            <Text style={styles.sectionLabel}>PROFILE</Text>
+            <Pressable
+              style={({ pressed }) => [styles.settingCard, staticStyles.profileRow, pressed && staticStyles.pressed]}
+              onPress={() => (navigation as any).navigate('EditProfile')}
+            >
+              {profile.avatar_url ? (
+                <Image source={{ uri: profile.avatar_url }} style={staticStyles.profileAvatar} />
+              ) : (
+                <Ionicons name="person-circle-outline" size={44} color={colors.textSecondary} />
+              )}
+              <View style={staticStyles.profileInfo}>
+                <Text style={styles.settingLabel} numberOfLines={1}>
+                  {profile.display_name || 'No name'}
+                </Text>
+                {profile.bio ? (
+                  <Text style={[styles.profileBio, { color: colors.textSecondary }]} numberOfLines={1}>
+                    {profile.bio}
+                  </Text>
+                ) : null}
+              </View>
+              <Ionicons name="chevron-forward" size={20} color={colors.textTertiary} />
+            </Pressable>
+          </>
+        )}
+
         {/* Training Section */}
         <Text style={styles.sectionLabel}>TRAINING</Text>
         <View style={styles.settingCard}>
@@ -378,6 +409,17 @@ const staticStyles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
+  profileRow: {
+    gap: 12,
+  },
+  profileAvatar: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+  },
+  profileInfo: {
+    flex: 1,
+  },
 });
 
 const createStyles = (colors: ThemeColors) => StyleSheet.create({
@@ -495,6 +537,10 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   },
   optionButtonTextActive: {
     color: '#fff',
+  },
+  profileBio: {
+    fontSize: 13,
+    marginTop: 2,
   },
   signOutText: {
     fontSize: 16,
