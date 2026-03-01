@@ -2,7 +2,7 @@
 
 ## Current Milestone
 v3.0 — Quality of Life & Visual Refresh (phases 12-17)
-Next phase to plan: 16 — Onboarding Flow
+Next phase to plan: 17 — Final Polish & Integration
 
 ## Completed Milestones
 | Version | Name | Phases | Archive |
@@ -51,6 +51,11 @@ None
 | Electric blue for all chart accents | 2026-03-01 | ProgressScreen volume bars changed from green to electric blue to match glass theme accent |
 | Individual glass cards for Settings rows | 2026-03-01 | Settings rows separated into individual glass cards with margins instead of flat stacked rows |
 | Custom glass header for Settings | 2026-03-01 | DashboardStackNavigator headerShown removed; SettingsScreen renders its own glass header |
+| ScrollView paging for onboarding | 2026-03-01 | No pager library needed; built-in horizontal ScrollView with pagingEnabled is sufficient for 4 pages |
+| Settings key for onboarding gate | 2026-03-01 | Reuses settings table with key 'onboarding_completed'; checked in App.tsx init before rendering |
+| Animated API over reanimated for onboarding | 2026-03-01 | RN built-in Animated with useNativeDriver sufficient for fade+slide entrances; no new dependency |
+| Skip → Setup page | 2026-03-01 | Skip button lands on setup page (not ready page) so users still configure preferences before completing |
+| initialRoute via onComplete callback | 2026-03-01 | Post-onboarding navigation uses navigationRef with setTimeout(100ms) for mount timing |
 
 ---
-*Last updated: 2026-03-01 — phase 15 plan 01 completed (6 tasks, 5 commits)*
+*Last updated: 2026-03-01 — phase 16 plan 01 completed (6 tasks, 6 commits)*
