@@ -14,7 +14,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useThemeControl, ThemeColors, ThemeMode } from '../theme';
 import { GradientBackground, GlassCard, GlassButton } from '../components/glass';
 import { getSetting, setSetting } from '../database/services';
-import { spacing, radii, typography } from '../theme/tokens';
+import { spacing, typography } from '../theme/tokens';
 
 const TOTAL_PAGES = 4;
 
@@ -150,23 +150,6 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
       ]).start();
     }
   }, [currentPage, welcomeFade, welcomeSlide, featureAnims, setupFade, setupSlide, readyFade, readySlide]);
-
-  // Trigger page 0 animation on mount
-  useEffect(() => {
-    animatedPages.current.add(0);
-    Animated.parallel([
-      Animated.timing(welcomeFade, {
-        toValue: 1,
-        duration: 500,
-        useNativeDriver: true,
-      }),
-      Animated.timing(welcomeSlide, {
-        toValue: 0,
-        duration: 500,
-        useNativeDriver: true,
-      }),
-    ]).start();
-  }, [welcomeFade, welcomeSlide]);
 
   const handleGoalChange = (goal: number) => {
     setWeeklyGoal(goal);
