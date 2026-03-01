@@ -2,7 +2,7 @@
 
 ## Current Milestone
 v4.0 — Social & Cloud (phases 18-25)
-Next phase to plan: 19 — Cloud Sync & Data Migration (research first)
+Next phase to execute: 20 — User Profiles (pending)
 
 ## Completed Milestones
 | Version | Name | Phases | Archive |
@@ -62,6 +62,12 @@ None
 | AuthGate component in App.tsx | 2026-03-01 | Separate component needed because useAuth() requires AuthProvider above in tree |
 | Onboarding before auth | 2026-03-01 | Local setup (theme, goals) is independent of cloud identity; onboarding first, then auth |
 | Sets/template_exercises RLS via parent FK | 2026-03-01 | Inherited ownership through workout/template parent lookup in RLS policies |
+| Custom sync over third-party | 2026-03-01 | Supastash too immature, PowerSync/WatermelonDB overkill for single-user; custom timestamp sync is simplest |
+| Last-write-wins conflict resolution | 2026-03-01 | LWW by updated_at sufficient for single-user app; no concurrent multi-user edits |
+| Local SQLite stays primary | 2026-03-01 | All reads from SQLite; Supabase is cloud backup; no data layer rewrite |
+| ID mapping table for sync | 2026-03-01 | sync_id_map bridges local INTEGER autoincrement to remote UUID; mapped by table+localId |
+| Soft deletes for sync | 2026-03-01 | Hard DELETEs replaced with SET deleted_at; enables bidirectional delete propagation |
+| Auto-sync 5-min cooldown | 2026-03-01 | Sync on app foreground if >5 min since last sync; manual "Sync Now" always available |
 
 ---
-*Last updated: 2026-03-01 — Phase 18 complete (Supabase auth, 11 commits)*
+*Last updated: 2026-03-01 — Phase 19 done (Cloud Sync & Data Migration)*
