@@ -138,6 +138,15 @@ export interface MonthlyStats {
   totalVolume: number;
 }
 
+export interface UserProfile {
+  id: string;           // UUID — same as auth.users.id
+  display_name: string;
+  bio: string;
+  avatar_url: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface NotificationPreferences {
   remindersEnabled: boolean;
   reminderDays: number[];   // expo weekday numbers: 1=Sun, 2=Mon, ..., 7=Sat
