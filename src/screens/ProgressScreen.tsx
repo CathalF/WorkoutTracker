@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   FlatList,
-  Modal,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -9,6 +8,7 @@ import {
   View,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { BlurView } from 'expo-blur';
 import { useFocusEffect } from '@react-navigation/native';
 import { LineChart, BarChart } from 'react-native-gifted-charts';
 import {
@@ -24,7 +24,8 @@ import {
   getExerciseVolume,
   getPersonalRecords,
 } from '../database/services';
-import { useTheme, ThemeColors } from '../theme';
+import { useThemeControl, ThemeColors } from '../theme';
+import { GradientBackground, GlassCard, GlassModal } from '../components/glass';
 
 type TimeRange = '1M' | '3M' | '6M' | 'ALL';
 type ChartType = 'weight' | 'volume';
@@ -57,7 +58,7 @@ function getDateFrom(range: TimeRange): string | undefined {
 }
 
 export default function ProgressScreen() {
-  const colors = useTheme();
+  const { colors, isDark } = useThemeControl();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const [exercises, setExercises] = useState<LoggedExercise[]>([]);
   const [selectedExerciseId, setSelectedExerciseId] = useState<number | null>(null);
@@ -140,8 +141,10 @@ export default function ProgressScreen() {
 
   if (exercises.length === 0) {
     return (
-      <View style={styles.container}>
+      <GradientBackground>
         <View style={styles.header}>
+          <BlurView intensity={80} tint={isDark ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
+          <View style={[StyleSheet.absoluteFill, { backgroundColor: colors.glassElevated }]} />
           <Text style={styles.title}>Progress</Text>
         </View>
         <View style={staticStyles.emptyState}>
@@ -151,15 +154,17 @@ export default function ProgressScreen() {
             Log some workouts to see your progress
           </Text>
         </View>
-      </View>
+      </GradientBackground>
     );
   }
 
   const currentData = chartType === 'weight' ? progressData : volumeData;
 
   return (
-    <View style={styles.container}>
+    <GradientBackground>
       <View style={styles.header}>
+        <BlurView intensity={80} tint={isDark ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
+        <View style={[StyleSheet.absoluteFill, { backgroundColor: colors.glassElevated }]} />
         <Text style={styles.title}>Progress</Text>
       </View>
 
@@ -230,7 +235,7 @@ export default function ProgressScreen() {
         </View>
 
         {/* Chart Area */}
-        <View style={styles.chartCard}>
+        <GlassCard style={staticStyles.chartCardWrapper}>
           <Text style={styles.chartLabel}>
             {chartType === 'weight' ? 'Max Weight (kg)' : 'Total Volume (kg)'}
           </Text>
@@ -260,9 +265,12 @@ export default function ProgressScreen() {
               yAxisLabelWidth={50}
               yAxisTextStyle={{ fontSize: 11, color: colors.textSecondary }}
               xAxisLabelTextStyle={{ fontSize: 11, color: colors.textSecondary }}
+              xAxisColor={colors.glassBorder}
+              yAxisColor={colors.glassBorder}
+              rulesColor={colors.glassBorder}
               areaChart
-              startFillColor={colors.chartAreaFillStart}
-              endFillColor={colors.chartAreaFillEnd}
+              startFillColor={colors.primary + '4D'}
+              endFillColor={colors.primary + '00'}
               startOpacity={0.3}
               endOpacity={0}
               overflowTop={30}
@@ -285,7 +293,7 @@ export default function ProgressScreen() {
           ) : (
             <BarChart
               data={volumeChartData}
-              frontColor={colors.success}
+              frontColor={colors.primary}
               barWidth={20}
               barBorderRadius={4}
               spacing={chartSpacing}
@@ -293,6 +301,9 @@ export default function ProgressScreen() {
               yAxisLabelWidth={60}
               yAxisTextStyle={{ fontSize: 11, color: colors.textSecondary }}
               xAxisLabelTextStyle={{ fontSize: 11, color: colors.textSecondary }}
+              xAxisColor={colors.glassBorder}
+              yAxisColor={colors.glassBorder}
+              rulesColor={colors.glassBorder}
               renderTooltip={(item: { value: number }) => (
                 <View style={styles.tooltipContainer}>
                   <Text style={styles.tooltipText}>{Math.round(item.value)} kg</Text>
@@ -302,13 +313,13 @@ export default function ProgressScreen() {
               animationDuration={600}
             />
           )}
-        </View>
+        </GlassCard>
 
         {/* Personal Records */}
         {(personalRecords.maxWeight || personalRecords.maxVolume) && (
           <View style={staticStyles.prSection}>
             <Text style={styles.prSectionTitle}>Personal Records</Text>
-            <View style={styles.prCard}>
+            <GlassCard>
               {personalRecords.maxWeight && (
                 <View style={staticStyles.prRow}>
                   <Ionicons name="trophy" size={24} color={colors.warning} />
@@ -337,46 +348,41 @@ export default function ProgressScreen() {
                   </View>
                 </View>
               )}
-            </View>
+            </GlassCard>
           </View>
         )}
       </ScrollView>
 
       {/* Exercise Selector Modal */}
-      <Modal visible={selectorOpen} animationType="slide" transparent>
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Select Exercise</Text>
-              <Pressable onPress={() => setSelectorOpen(false)}>
-                <Ionicons name="close" size={24} color={colors.text} />
-              </Pressable>
-            </View>
-            <FlatList
-              data={exercises}
-              keyExtractor={(item) => item.id.toString()}
-              renderItem={({ item }) => (
-                <Pressable
-                  style={({ pressed }) => [
-                    styles.exerciseRow,
-                    pressed && styles.exerciseRowPressed,
-                    item.id === selectedExerciseId && styles.exerciseRowSelected,
-                  ]}
-                  onPress={() => handleSelectExercise(item.id)}
-                >
-                  <Text style={styles.exerciseRowName}>{item.name}</Text>
-                  <Text style={styles.exerciseRowGroup}>{item.muscle_group_name}</Text>
-                </Pressable>
-              )}
-              ItemSeparatorComponent={() => <View style={styles.separator} />}
-              removeClippedSubviews={true}
-              maxToRenderPerBatch={15}
-              windowSize={5}
-            />
-          </View>
-        </View>
-      </Modal>
-    </View>
+      <GlassModal
+        visible={selectorOpen}
+        onClose={() => setSelectorOpen(false)}
+        title="Select Exercise"
+      >
+        <FlatList
+          data={exercises}
+          keyExtractor={(item) => item.id.toString()}
+          renderItem={({ item }) => (
+            <Pressable
+              style={({ pressed }) => [
+                styles.exerciseRow,
+                pressed && styles.exerciseRowPressed,
+                item.id === selectedExerciseId && styles.exerciseRowSelected,
+              ]}
+              onPress={() => handleSelectExercise(item.id)}
+            >
+              <Text style={styles.exerciseRowName}>{item.name}</Text>
+              <Text style={styles.exerciseRowGroup}>{item.muscle_group_name}</Text>
+            </Pressable>
+          )}
+          ItemSeparatorComponent={() => <View style={styles.separator} />}
+          removeClippedSubviews={true}
+          maxToRenderPerBatch={15}
+          windowSize={5}
+          style={staticStyles.exerciseList}
+        />
+      </GlassModal>
+    </GradientBackground>
   );
 }
 
@@ -386,7 +392,7 @@ const staticStyles = StyleSheet.create({
   },
   scrollContentContainer: {
     padding: 16,
-    paddingBottom: 40,
+    paddingBottom: 100,
   },
   controlsRow: {
     marginTop: 12,
@@ -398,6 +404,9 @@ const staticStyles = StyleSheet.create({
     height: 200,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  chartCardWrapper: {
+    marginTop: 16,
   },
   prSection: {
     marginTop: 16,
@@ -415,20 +424,18 @@ const staticStyles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  exerciseList: {
+    maxHeight: 300,
+  },
 });
 
 const createStyles = (colors: ThemeColors) => StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
   header: {
     paddingTop: 60,
     paddingHorizontal: 24,
     paddingBottom: 12,
-    backgroundColor: colors.surface,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border,
+    borderBottomColor: colors.glassBorder,
   },
   title: {
     fontSize: 28,
@@ -440,11 +447,11 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: colors.surface,
+    backgroundColor: colors.glassSurface,
     padding: 16,
     borderRadius: 12,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
+    borderWidth: 1,
+    borderColor: colors.glassBorder,
   },
   exerciseSelectorPressed: {
     backgroundColor: colors.pressed,
@@ -464,9 +471,9 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,
-    backgroundColor: colors.surface,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
+    backgroundColor: colors.glassSurface,
+    borderWidth: 1,
+    borderColor: colors.glassBorder,
   },
   chipSelected: {
     backgroundColor: colors.primary,
@@ -483,10 +490,12 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   // Toggle
   toggleContainer: {
     flexDirection: 'row',
-    backgroundColor: colors.separator,
+    backgroundColor: colors.glassSurface,
     borderRadius: 8,
     padding: 2,
     marginTop: 12,
+    borderWidth: 1,
+    borderColor: colors.glassBorder,
   },
   toggleSegment: {
     flex: 1,
@@ -504,15 +513,6 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   },
   toggleTextSelected: {
     color: '#fff',
-  },
-  // Chart
-  chartCard: {
-    backgroundColor: colors.surface,
-    borderRadius: 12,
-    padding: 16,
-    marginTop: 16,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
   },
   chartLabel: {
     fontSize: 15,
@@ -548,13 +548,6 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     color: colors.text,
     marginBottom: 8,
   },
-  prCard: {
-    backgroundColor: colors.surface,
-    borderRadius: 12,
-    padding: 16,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
-  },
   prLabel: {
     fontSize: 13,
     color: colors.textSecondary,
@@ -577,7 +570,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   },
   prDivider: {
     height: StyleSheet.hairlineWidth,
-    backgroundColor: colors.separator,
+    backgroundColor: colors.glassBorder,
     marginVertical: 12,
   },
   // Empty state
@@ -592,34 +585,8 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     color: colors.textSecondary,
     marginTop: 4,
   },
-  // Modal
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: colors.modalOverlay,
-    justifyContent: 'flex-end',
-  },
-  modalContent: {
-    backgroundColor: colors.surface,
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
-    maxHeight: '70%',
-    paddingBottom: 34,
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: 16,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border,
-  },
-  modalTitle: {
-    fontSize: 17,
-    fontWeight: '600',
-    color: colors.text,
-  },
   exerciseRow: {
-    paddingHorizontal: 16,
+    paddingHorizontal: 4,
     paddingVertical: 14,
   },
   exerciseRowPressed: {
@@ -640,7 +607,6 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   },
   separator: {
     height: StyleSheet.hairlineWidth,
-    backgroundColor: colors.separator,
-    marginLeft: 16,
+    backgroundColor: colors.glassBorder,
   },
 });
